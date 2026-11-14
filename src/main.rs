@@ -446,6 +446,7 @@ fn SheetApp(
                                     <option value="Engenheiro" selected=move || sheet.get().class_name == "Engenheiro">"Engenheiro"</option>
                                     <option value="Magus" selected=move || sheet.get().class_name == "Magus">"Magus"</option>
                                     <option value="Cozinheiro" selected=move || sheet.get().class_name == "Cozinheiro">"Cozinheiro"</option>
+                                    <option value="Rushdown" selected=move || sheet.get().class_name == "Rushdown">"Rushdown"</option>
                                 </select>
                             </label>
                             <label>
