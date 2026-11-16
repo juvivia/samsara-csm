@@ -545,8 +545,8 @@ fn SheetApp(
                     </div>
 
                     <section class="test-advantages-section">
-                        <h3>"Vantagens em testes"</h3>
-                        <p class="hint">"Defina quantas vantagens o personagem possui em cada tipo de teste."</p>
+                        <h3>"Vantagens"</h3>
+                        <p class="hint">"Defina quantas vantagens o personagem possui em cada tipo de teste. uma vantagem equivale a +1d4 no teste."</p>
                         <div class="test-advantages-grid">
                             {move || {
                                 const TESTS: [(&str, &str); 16] = [
