@@ -299,7 +299,6 @@ fn SheetApp(
     let skill_name = RwSignal::new(String::new());
     let skill_description = RwSignal::new(String::new());
     let skill_form_open = RwSignal::new(false);
-    let dragged_skill = RwSignal::new(None::<String>);
     let expanded_skill_folders = RwSignal::new(Vec::<String>::new());
     let portrait_url = RwSignal::new(None::<String>);
     let portrait_uploading = RwSignal::new(false);
@@ -363,8 +362,9 @@ fn SheetApp(
         let mut items = skill_items();
         if merge_skill_entries(&mut items, &source_name, &target_name) {
             let folder_name = items.iter()
-                .find(|item| item.children.iter().any(|child| child.name == source_name)
-                    && item.children.iter().any(|child| child.name == target_name))
+                .find(|item| (item.name == target_name && item.children.iter().any(|child| child.name == source_name))
+                    || (item.children.iter().any(|child| child.name == source_name)
+                        && item.children.iter().any(|child| child.name == target_name)))
                 .map(|item| item.name.clone());
             save_skill_items(items);
             if let Some(folder_name) = folder_name {
@@ -375,7 +375,6 @@ fn SheetApp(
                 });
             }
         }
-        dragged_skill.set(None);
     };
 
     let submit_skill = move |_| {
@@ -423,7 +422,6 @@ fn SheetApp(
                                             let _ = data.set_data("text/plain", &entry_name_for_drag);
                                             data.set_effect_allowed("move");
                                         }
-                                        dragged_skill.set(Some(entry_name_for_drag.clone()));
                                     }
                                     on:dragover=|ev: web_sys::DragEvent| ev.prevent_default()
                                     on:drop=move |ev: web_sys::DragEvent| drop_skill_on(entry_name_for_drop.clone(), ev)
