@@ -300,6 +300,7 @@ fn SheetApp(
     let skill_description = RwSignal::new(String::new());
     let skill_form_open = RwSignal::new(false);
     let expanded_skill_folders = RwSignal::new(Vec::<String>::new());
+    let editing_skills = RwSignal::new(Vec::<String>::new());
     let portrait_url = RwSignal::new(None::<String>);
     let portrait_uploading = RwSignal::new(false);
 
@@ -406,6 +407,9 @@ fn SheetApp(
                         let entry_name_for_drag = entry.name.clone();
                         let entry_name_for_drop = entry.name.clone();
                         let entry_name_for_remove = entry.name.clone();
+                        let entry_name_for_edit = entry.name.clone();
+                        let entry_name_for_save = entry.name.clone();
+                        let is_editing = editing_skills.get().contains(&entry.name);
 
                         if entry.children.is_empty() {
                             let description = if entry.description.is_empty() {
@@ -426,15 +430,67 @@ fn SheetApp(
                                     on:dragover=|ev: web_sys::DragEvent| ev.prevent_default()
                                     on:drop=move |ev: web_sys::DragEvent| drop_skill_on(entry_name_for_drop.clone(), ev)
                                 >
-                                    <div class="item-title">
-                                        <strong>{entry.name}</strong>
-                                        <button
-                                            type="button"
-                                            class="remove"
-                                            on:click=move |_| remove_skill(entry_name_for_remove.clone())
-                                        >"Remover"</button>
+                                    <div class="item-title skill-entry-heading">
+                                        {if is_editing {
+                                            view! {
+                                                <input
+                                                    class="skill-edit-name"
+                                                    aria-label="Nome da habilidade"
+                                                    prop:value=entry_name.clone()
+                                                    on:change=move |ev| {
+                                                        let new_name = event_target_value(&ev).trim().to_string();
+                                                        if new_name.is_empty() { return; }
+                                                        let mut current = skill_items();
+                                                        if let Some(skill) = current.iter_mut().find(|item| item.name == entry_name_for_save) {
+                                                            skill.name = new_name.clone();
+                                                            save_skill_items(current);
+                                                            editing_skills.update(|names| {
+                                                                if let Some(n) = names.iter_mut().find(|n| *n == &entry_name_for_save) {
+                                                                    *n = new_name;
+                                                                }
+                                                            });
+                                                        }
+                                                    }
+                                                />
+                                            }.into_any()
+                                        } else {
+                                            view! { <strong>{entry.name.clone()}</strong> }.into_any()
+                                        }}
+                                        <div class="skill-entry-actions">
+                                            <button type="button" class="remove" on:click=move |_| remove_skill(entry_name_for_remove.clone())>"Remover"</button>
+                                            <button
+                                                type="button"
+                                                class="skill-edit-button"
+                                                on:click=move |_| editing_skills.update(|names| {
+                                                    if let Some(index) = names.iter().position(|name| name == &entry_name_for_edit) {
+                                                        names.remove(index);
+                                                    } else {
+                                                        names.push(entry_name_for_edit.clone());
+                                                    }
+                                                })
+                                            >{if is_editing { "Concluir" } else { "Editar" }}</button>
+                                        </div>
                                     </div>
-                                    <p>{description}</p>
+                                    {if is_editing {
+                                        view! {
+                                            <textarea
+                                                class="skill-edit-description"
+                                                rows="2"
+                                                aria-label="Descrição da habilidade"
+                                                prop:value=entry.description.clone()
+                                                on:change=move |ev| {
+                                                    let value = event_target_value(&ev);
+                                                    let mut current = skill_items();
+                                                    if let Some(skill) = current.iter_mut().find(|item| item.name == entry_name_for_save) {
+                                                        skill.description = value;
+                                                        save_skill_items(current);
+                                                    }
+                                                }
+                                            ></textarea>
+                                        }.into_any()
+                                    } else {
+                                        view! { <p>{description}</p> }.into_any()
+                                    }}
                                 </div>
                             }.into_any()
                         } else {
@@ -443,10 +499,12 @@ fn SheetApp(
                             let folder_name_for_description = entry.name.clone();
                             let folder_name_for_rename = entry.name.clone();
                             let folder_name_for_remove = entry.name.clone();
+                            let folder_name_for_edit = entry.name.clone();
                             let is_expanded = expanded_skill_folders.get().contains(&entry.name);
                             let folder_description = entry.description.clone();
                             let folder_name = entry.name.clone();
                             let children = entry.children.clone();
+                            let folder_editing = editing_skills.get().contains(&entry.name);
                             view! {
                                 <div
                                     class="item skill-folder"
@@ -454,92 +512,198 @@ fn SheetApp(
                                     on:drop=move |ev: web_sys::DragEvent| drop_skill_on(folder_name_for_drop.clone(), ev)
                                 >
                                     <div class="item-title skill-folder-heading">
-                                        <button
-                                            type="button"
-                                            class="skill-folder-toggle"
-                                            aria-label="Expandir ou recolher pasta"
-                                            on:click=move |_| expanded_skill_folders.update(|expanded| {
-                                                if let Some(index) = expanded.iter().position(|name| name == &folder_name_for_toggle) {
-                                                    expanded.remove(index);
-                                                } else {
-                                                    expanded.push(folder_name_for_toggle.clone());
-                                                }
-                                            })
-                                        >
-                                            {if is_expanded { "▾" } else { "▸" }}
-                                        </button>
-                                        <input
-                                            class="skill-folder-name"
-                                            aria-label="Nome da pasta"
-                                            prop:value=folder_name
-                                            on:change=move |ev| {
-                                                let new_name = event_target_value(&ev).trim().to_string();
-                                                if new_name.is_empty() { return; }
-                                                let mut current = skill_items();
-                                                if current.iter().any(|item| item.name == new_name && item.name != folder_name_for_rename) {
-                                                    return;
-                                                }
-                                                if let Some(folder) = current.iter_mut().find(|item| item.name == folder_name_for_rename) {
-                                                    folder.name = new_name.clone();
-                                                    save_skill_items(current);
-                                                    expanded_skill_folders.update(|expanded| {
-                                                        for name in expanded.iter_mut() {
-                                                            if name == &folder_name_for_rename {
-                                                                *name = new_name.clone();
+                                        {if is_expanded && folder_editing {
+                                            view! {
+                                                <input
+                                                    class="skill-folder-name"
+                                                    aria-label="Nome da pasta"
+                                                    prop:value=folder_name.clone()
+                                                    on:change=move |ev| {
+                                                        let new_name = event_target_value(&ev).trim().to_string();
+                                                        if new_name.is_empty() { return; }
+                                                        let mut current = skill_items();
+                                                        if current.iter().any(|item| item.name == new_name && item.name != folder_name_for_rename) {
+                                                            return;
+                                                        }
+                                                        if let Some(folder) = current.iter_mut().find(|item| item.name == folder_name_for_rename) {
+                                                            folder.name = new_name.clone();
+                                                            save_skill_items(current);
+                                                            expanded_skill_folders.update(|expanded| {
+                                                                for name in expanded.iter_mut() {
+                                                                    if name == &folder_name_for_rename {
+                                                                        *name = new_name.clone();
+                                                                    }
+                                                                }
+                                                            });
+                                                            editing_skills.update(|names| {
+                                                                for name in names.iter_mut() {
+                                                                    if name == &folder_name_for_rename {
+                                                                        *name = new_name.clone();
+                                                                    }
+                                                                }
+                                                            });
+                                                        }
+                                                    }
+                                                />
+                                            }.into_any()
+                                        } else {
+                                            view! { <strong>{folder_name.clone()}</strong> }.into_any()
+                                        }}
+                                        <div class="skill-folder-actions">
+                                            <button
+                                                type="button"
+                                                class="remove"
+                                                on:click=move |_| remove_skill(folder_name_for_remove.clone())
+                                            >"Remover"</button>
+                                            {if is_expanded {
+                                                view! {
+                                                    <button
+                                                        type="button"
+                                                        class="skill-edit-button"
+                                                        on:click=move |_| editing_skills.update(|names| {
+                                                            if let Some(index) = names.iter().position(|name| name == &folder_name_for_edit) {
+                                                                names.remove(index);
+                                                            } else {
+                                                                names.push(folder_name_for_edit.clone());
                                                             }
+                                                        })
+                                                    >{if folder_editing { "Concluir" } else { "Editar" }}</button>
+                                                }.into_any()
+                                            } else {
+                                                view! { <></> }.into_any()
+                                            }}
+                                            <button
+                                                type="button"
+                                                class="skill-folder-toggle"
+                                                aria-label="Expandir ou recolher pasta"
+                                                on:click=move |_| {
+                                                    expanded_skill_folders.update(|expanded| {
+                                                        if let Some(index) = expanded.iter().position(|name| name == &folder_name_for_toggle) {
+                                                            expanded.remove(index);
+                                                        } else {
+                                                            expanded.push(folder_name_for_toggle.clone());
                                                         }
                                                     });
+                                                    editing_skills.update(|names| names.retain(|name| name != &folder_name_for_toggle));
                                                 }
-                                            }
-                                        />
-                                        <span class="skill-folder-count">{format!("{} habilidades", children.len())}</span>
-                                        <button
-                                            type="button"
-                                            class="remove"
-                                            on:click=move |_| remove_skill(folder_name_for_remove.clone())
-                                        >"Remover"</button>
+                                            >
+                                                {if is_expanded { "▾" } else { "▸" }}
+                                            </button>
+                                        </div>
                                     </div>
-                                    <textarea
-                                        class="skill-folder-description"
-                                        rows="2"
-                                        placeholder="Descrição da pasta..."
-                                        aria-label="Descrição da pasta"
-                                        prop:value=folder_description
-                                        on:input=move |ev| {
-                                            let value = event_target_value(&ev);
-                                            let mut current = skill_items();
-                                            if let Some(folder) = current.iter_mut().find(|item| item.name == folder_name_for_description) {
-                                                folder.description = value;
-                                                save_skill_items(current);
-                                            }
-                                        }
-                                    ></textarea>
                                     {if is_expanded {
                                         view! {
-                                            <div class="skill-folder-contents">
-                                                {children.into_iter().map(|child| {
-                                                    let child_name_for_remove = child.name.clone();
-                                                    let child_description = if child.description.is_empty() {
-                                                        "Nenhuma descrição registrada.".to_string()
-                                                    } else {
-                                                        child.description.clone()
-                                                    };
+                                            <div class="skill-folder-details">
+                                                {if folder_editing {
                                                     view! {
-                                                        <div
-                                                            class="skill-folder-child"
-                                                        >
-                                                            <div class="item-title">
-                                                                <strong>{child.name}</strong>
-                                                                <button type="button" class="remove" on:click=move |_| remove_skill(child_name_for_remove.clone())>"Remover"</button>
+                                                        <textarea
+                                                            class="skill-folder-description"
+                                                            rows="2"
+                                                            placeholder="Descrição da pasta..."
+                                                            aria-label="Descrição da pasta"
+                                                            prop:value=folder_description.clone()
+                                                            on:change=move |ev| {
+                                                                let value = event_target_value(&ev);
+                                                                let mut current = skill_items();
+                                                                if let Some(folder) = current.iter_mut().find(|item| item.name == folder_name_for_description) {
+                                                                    folder.description = value;
+                                                                    save_skill_items(current);
+                                                                }
+                                                            }
+                                                        ></textarea>
+                                                    }.into_any()
+                                                } else {
+                                                    view! {
+                                                        <p class="skill-folder-description-text">{if folder_description.is_empty() { "Nenhuma descrição registrada.".to_string() } else { folder_description.clone() }}</p>
+                                                    }.into_any()
+                                                }}
+                                                <div class="skill-folder-contents">
+                                                    {children.into_iter().map(|child| {
+                                                        let child_name = child.name.clone();
+                                                        let child_name_for_remove = child.name.clone();
+                                                        let child_name_for_edit = child.name.clone();
+                                                        let child_name_for_save = child.name.clone();
+                                                        let child_description = if child.description.is_empty() {
+                                                            "Nenhuma descrição registrada.".to_string()
+                                                        } else {
+                                                            child.description.clone()
+                                                        };
+                                                        let child_editing = editing_skills.get().contains(&child.name);
+                                                        view! {
+                                                            <div class="skill-folder-child">
+                                                                <div class="item-title skill-entry-heading">
+                                                                    {if child_editing {
+                                                                        view! {
+                                                                            <input
+                                                                                class="skill-edit-name"
+                                                                                aria-label="Nome da habilidade"
+                                                                                prop:value=child_name.clone()
+                                                                                on:change=move |ev| {
+                                                                                    let new_name = event_target_value(&ev).trim().to_string();
+                                                                                    if new_name.is_empty() { return; }
+                                                                                    let mut current = skill_items();
+                                                                                    if let Some(folder) = current.iter_mut().find(|item| item.children.iter().any(|child| child.name == child_name_for_save)) {
+                                                                                        if let Some(skill) = folder.children.iter_mut().find(|child| child.name == child_name_for_save) {
+                                                                                            skill.name = new_name.clone();
+                                                                                            save_skill_items(current);
+                                                                                            editing_skills.update(|names| {
+                                                                                                if let Some(name) = names.iter_mut().find(|name| *name == &child_name_for_save) {
+                                                                                                    *name = new_name;
+                                                                                                }
+                                                                                            });
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            />
+                                                                        }.into_any()
+                                                                    } else {
+                                                                        view! { <strong>{child.name.clone()}</strong> }.into_any()
+                                                                    }}
+                                                                    <div class="skill-entry-actions">
+                                                                        <button type="button" class="remove" on:click=move |_| remove_skill(child_name_for_remove.clone())>"Remover"</button>
+                                                                        <button
+                                                                            type="button"
+                                                                            class="skill-edit-button"
+                                                                            on:click=move |_| editing_skills.update(|names| {
+                                                                                if let Some(index) = names.iter().position(|name| name == &child_name_for_edit) {
+                                                                                    names.remove(index);
+                                                                                } else {
+                                                                                    names.push(child_name_for_edit.clone());
+                                                                                }
+                                                                            })
+                                                                        >{if child_editing { "Concluir" } else { "Editar" }}</button>
+                                                                    </div>
+                                                                </div>
+                                                                {if child_editing {
+                                                                    view! {
+                                                                        <textarea
+                                                                            class="skill-edit-description"
+                                                                            rows="2"
+                                                                            aria-label="Descrição da habilidade"
+                                                                            prop:value=child.description.clone()
+                                                                            on:change=move |ev| {
+                                                                                let value = event_target_value(&ev);
+                                                                                let mut current = skill_items();
+                                                                                if let Some(folder) = current.iter_mut().find(|item| item.children.iter().any(|child| child.name == child_name_for_save)) {
+                                                                                    if let Some(skill) = folder.children.iter_mut().find(|child| child.name == child_name_for_save) {
+                                                                                        skill.description = value;
+                                                                                        save_skill_items(current);
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        ></textarea>
+                                                                    }.into_any()
+                                                                } else {
+                                                                    view! { <p>{child_description}</p> }.into_any()
+                                                                }}
                                                             </div>
-                                                            <p>{child_description}</p>
-                                                        </div>
-                                                    }
-                                                }).collect_view()}
+                                                        }
+                                                    }).collect_view()}
+                                                </div>
                                             </div>
                                         }.into_any()
                                     } else {
-                                        view! { <></> }.into_any()
+                                        view! { <p class="skill-folder-summary">{if folder_description.is_empty() { "Nenhuma descrição registrada.".to_string() } else { folder_description.clone() }}</p> }.into_any()
                                     }}
                                 </div>
                             }.into_any()
