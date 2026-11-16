@@ -469,14 +469,6 @@ input[type="number"]::-webkit-outer-spin-button {
     background: #1a2422;
 }
 
-.skill-drag-hint {
-    display: block;
-    margin-top: 8px;
-    color: #74877e;
-    font-size: 10px;
-    opacity: .8;
-}
-
 .skill-folder {
     border-color: #52685d;
     background: #1a2421;
@@ -485,11 +477,6 @@ input[type="number"]::-webkit-outer-spin-button {
 .skill-folder-heading {
     align-items: center;
     gap: 9px;
-}
-
-.skill-folder-heading strong {
-    flex: 1;
-    min-width: 0;
 }
 
 .skill-folder-toggle {
@@ -514,22 +501,6 @@ input[type="number"]::-webkit-outer-spin-button {
     color: #91a69b;
     font-size: 10px;
     white-space: nowrap;
-}
-
-.skill-folder-description {
-    min-height: 52px;
-    margin-top: 12px;
-    padding: 9px 10px;
-    border-color: #35473e;
-    background: #151e1b;
-    font-size: 12px;
-}
-
-.skill-folder-summary {
-    margin: 9px 0 0;
-    color: #91a69b;
-    font-size: 11px;
-    white-space: pre-wrap;
 }
 
 .skill-folder-contents {
@@ -565,4 +536,52 @@ input[type="number"]::-webkit-outer-spin-button {
         width: 100%;
         padding-left: 36px;
     }
+}
+
+
+/* Nome e descrição editáveis com a mesma aparência textual das habilidades. */
+.skill-folder-name {
+    flex: 1;
+    min-width: 0;
+    padding: 2px 0;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    border-radius: 0;
+    outline: none;
+    background: transparent;
+    color: #dce5df;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.skill-folder-name:focus {
+    border-bottom-color: #60796c;
+}
+
+.skill-folder-description {
+    display: block;
+    width: 100%;
+    min-height: 24px;
+    margin: 8px 0 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    outline: none;
+    resize: vertical;
+    background: transparent;
+    color: #a4b0b6;
+    font: inherit;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.skill-folder-description::placeholder {
+    color: #74877e;
+    opacity: 1;
+}
+
+.skill-folder-description:focus {
+    border-bottom: 1px solid #52685d;
 }
