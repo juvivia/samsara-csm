@@ -184,6 +184,93 @@ fn specialization_options_for_race(race: &str) -> Vec<&'static str> {
     }
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+struct SkillEntry {
+    name: String,
+    #[serde(default)]
+    description: String,
+    #[serde(default)]
+    children: Vec<SkillEntry>,
+}
+
+fn load_skill_items(raw: &str) -> Vec<SkillEntry> {
+    if let Ok(items) = serde_json::from_str::<Vec<SkillEntry>>(raw) {
+        return items;
+    }
+    if let Ok(items) = serde_json::from_str::<Vec<(String, String)>>(raw) {
+        return items.into_iter().map(|(name, description)| SkillEntry {
+            name,
+            description,
+            children: Vec::new(),
+        }).collect();
+    }
+    raw.lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .filter_map(|line| {
+            if let Some((name, description)) = line.split_once("::") {
+                let name = name.trim();
+                if name.is_empty() { None } else {
+                    Some(SkillEntry {
+                        name: name.to_string(),
+                        description: decode_skill_description(description.trim()),
+                        children: Vec::new(),
+                    })
+                }
+            } else {
+                Some(SkillEntry {
+                    name: line.to_string(),
+                    description: String::new(),
+                    children: Vec::new(),
+                })
+            }
+        })
+        .collect()
+}
+
+fn remove_skill_entry(items: &mut Vec<SkillEntry>, name: &str) -> bool {
+    if let Some(index) = items.iter().position(|item| item.name == name) {
+        items.remove(index);
+        return true;
+    }
+    for item in items.iter_mut() {
+        if let Some(index) = item.children.iter().position(|child| child.name == name) {
+            item.children.remove(index);
+            return true;
+        }
+    }
+    false
+}
+
+fn merge_skill_entries(items: &mut Vec<SkillEntry>, source_name: &str, target_name: &str) -> bool {
+    if source_name == target_name { return false; }
+    let Some(source_index) = items.iter().position(|item| item.name == source_name) else {
+        return false;
+    };
+    let Some(target_index) = items.iter().position(|item| item.name == target_name) else {
+        return false;
+    };
+    if source_index == target_index { return false; }
+
+    let source = items.remove(source_index);
+    let adjusted_target = if source_index < target_index { target_index - 1 } else { target_index };
+    let target = &mut items[adjusted_target];
+
+    if target.children.is_empty() {
+        let original_target = SkillEntry {
+            name: target.name.clone(),
+            description: target.description.clone(),
+            children: Vec::new(),
+        };
+        target.name = format!("Pasta {}", items.len() + 1);
+        target.description.clear();
+        target.children = vec![original_target, source];
+    } else {
+        target.children.push(source);
+    }
+    true
+}
+
 fn encode_skill_description(description: &str) -> String {
     description.replace('\n', "\\n")
 }
@@ -211,6 +298,8 @@ fn SheetApp(
     let skill_name = RwSignal::new(String::new());
     let skill_description = RwSignal::new(String::new());
     let skill_form_open = RwSignal::new(false);
+    let dragged_skill = RwSignal::new(None::<String>);
+    let expanded_skill_folders = RwSignal::new(Vec::<String>::new());
     let portrait_url = RwSignal::new(None::<String>);
     let portrait_uploading = RwSignal::new(false);
 
@@ -226,32 +315,12 @@ fn SheetApp(
 
     Effect::new(move |_| save_sheet(&sheet.get()));
 
-    let skill_items = move || {
-        let raw = sheet.get().abilities;
+    let skill_items = move || load_skill_items(&sheet.get().abilities);
 
-        if let Ok(items) = serde_json::from_str::<Vec<(String, String)>>(&raw) {
-            return items;
-        }
-
-        raw.lines()
-            .map(str::trim)
-            .filter(|skill| !skill.is_empty())
-            .filter_map(|skill| {
-                if let Some((name, description)) = skill.split_once("::") {
-                    let name = name.trim();
-                    if name.is_empty() {
-                        None
-                    } else {
-                        Some((
-                            name.to_string(),
-                            decode_skill_description(description.trim()),
-                        ))
-                    }
-                } else {
-                    Some((skill.to_string(), String::new()))
-                }
-            })
-            .collect::<Vec<_>>()
+    let save_skill_items = move |items: Vec<SkillEntry>| {
+        sheet.update(|s| {
+            s.abilities = serde_json::to_string(&items).unwrap_or_default();
+        });
     };
 
     let add_skill = move |_| {
@@ -263,29 +332,43 @@ fn SheetApp(
         }
 
         let mut items = skill_items();
-        if !items.iter().any(|(existing_name, _)| {
-            existing_name.eq_ignore_ascii_case(&name)
-        }) {
-            items.push((name, description));
+        if !items.iter().any(|item| item.name.eq_ignore_ascii_case(&name)) {
+            items.push(SkillEntry {
+                name,
+                description,
+                children: Vec::new(),
+            });
         }
-
-        sheet.update(|s| {
-            s.abilities = serde_json::to_string(&items).unwrap_or_default();
-        });
-
+        save_skill_items(items);
         skill_name.set(String::new());
         skill_description.set(String::new());
     };
 
     let remove_skill = move |skill_to_remove: String| {
-        let items = skill_items()
-            .into_iter()
-            .filter(|(name, _)| name != &skill_to_remove)
-            .collect::<Vec<_>>();
+        let mut items = skill_items();
+        remove_skill_entry(&mut items, &skill_to_remove);
+        save_skill_items(items);
+    };
 
-        sheet.update(|s| {
-            s.abilities = serde_json::to_string(&items).unwrap_or_default();
-        });
+    let drop_skill_on = move |target_name: String, ev: web_sys::DragEvent| {
+        ev.prevent_default();
+        let source_name = ev.data_transfer()
+            .and_then(|data| data.get_data("text/plain").ok())
+            .unwrap_or_default();
+        if source_name.is_empty() || source_name == target_name {
+            return;
+        }
+
+        let mut items = skill_items();
+        if merge_skill_entries(&mut items, &source_name, &target_name) {
+            save_skill_items(items);
+            expanded_skill_folders.update(|expanded| {
+                if !expanded.contains(&target_name) {
+                    expanded.push(target_name);
+                }
+            });
+        }
+        dragged_skill.set(None);
     };
 
     let submit_skill = move |_| {
@@ -311,30 +394,142 @@ fn SheetApp(
             .into_any()
         } else {
             view! {
-                <div class="item-list">
-                    {items.into_iter().map(|(skill_title, skill_text)| {
-                        let skill_title_clone = skill_title.clone();
+                <div class="item-list skill-item-list">
+                    {items.into_iter().map(|entry| {
+                        let entry_name = entry.name.clone();
+                        let entry_name_for_drag = entry.name.clone();
+                        let entry_name_for_drop = entry.name.clone();
+                        let entry_name_for_remove = entry.name.clone();
 
-                        view! {
-                            <div class="item">
-                                <div class="item-title">
-                                    <strong>{skill_title}</strong>
-                                    <button
-                                        type="button"
-                                        class="remove"
-                                        on:click=move |_| remove_skill(skill_title_clone.clone())
-                                    >
-                                        "Remover"
-                                    </button>
+                        if entry.children.is_empty() {
+                            let description = if entry.description.is_empty() {
+                                "Nenhuma descrição registrada.".to_string()
+                            } else {
+                                entry.description.clone()
+                            };
+                            view! {
+                                <div
+                                    class="item skill-entry"
+                                    draggable="true"
+                                    on:dragstart=move |ev: web_sys::DragEvent| {
+                                        if let Some(data) = ev.data_transfer() {
+                                            let _ = data.set_data("text/plain", &entry_name_for_drag);
+                                            data.set_effect_allowed("move");
+                                        }
+                                        dragged_skill.set(Some(entry_name_for_drag.clone()));
+                                    }
+                                    on:dragover=|ev: web_sys::DragEvent| ev.prevent_default()
+                                    on:drop=move |ev: web_sys::DragEvent| drop_skill_on(entry_name_for_drop.clone(), ev)
+                                >
+                                    <div class="item-title">
+                                        <strong>{entry.name}</strong>
+                                        <button
+                                            type="button"
+                                            class="remove"
+                                            on:click=move |_| remove_skill(entry_name_for_remove.clone())
+                                        >"Remover"</button>
+                                    </div>
+                                    <p>{description}</p>
+                                    <span class="skill-drag-hint">"Arraste sobre outra habilidade para agrupar"</span>
                                 </div>
-                                <p>
-                                    {if skill_text.is_empty() {
-                                        "Nenhuma descrição registrada.".to_string()
+                            }.into_any()
+                        } else {
+                            let folder_name = entry.name.clone();
+                            let folder_name_for_toggle = entry.name.clone();
+                            let folder_name_for_drop = entry.name.clone();
+                            let folder_name_for_remove = entry.name.clone();
+                            let is_expanded = expanded_skill_folders.get().contains(&entry.name);
+                            let folder_description = entry.description.clone();
+                            let children = entry.children.clone();
+                            view! {
+                                <div
+                                    class="item skill-folder"
+                                    draggable="true"
+                                    on:dragstart=move |ev: web_sys::DragEvent| {
+                                        if let Some(data) = ev.data_transfer() {
+                                            let _ = data.set_data("text/plain", &folder_name);
+                                            data.set_effect_allowed("move");
+                                        }
+                                        dragged_skill.set(Some(folder_name.clone()));
+                                    }
+                                    on:dragover=|ev: web_sys::DragEvent| ev.prevent_default()
+                                    on:drop=move |ev: web_sys::DragEvent| drop_skill_on(folder_name_for_drop.clone(), ev)
+                                >
+                                    <div class="item-title skill-folder-heading">
+                                        <button
+                                            type="button"
+                                            class="skill-folder-toggle"
+                                            aria-label="Expandir ou recolher pasta"
+                                            on:click=move |_| expanded_skill_folders.update(|expanded| {
+                                                if let Some(index) = expanded.iter().position(|name| name == &folder_name_for_toggle) {
+                                                    expanded.remove(index);
+                                                } else {
+                                                    expanded.push(folder_name_for_toggle.clone());
+                                                }
+                                            })
+                                        >
+                                            {if is_expanded { "▾" } else { "▸" }}
+                                        </button>
+                                        <strong>{entry.name}</strong>
+                                        <span class="skill-folder-count">{format!("{} habilidades", children.len())}</span>
+                                        <button
+                                            type="button"
+                                            class="remove"
+                                            on:click=move |_| remove_skill(folder_name_for_remove.clone())
+                                        >"Remover"</button>
+                                    </div>
+                                    <textarea
+                                        class="skill-folder-description"
+                                        rows="2"
+                                        placeholder="Descrição da pasta"
+                                        prop:value=folder_description
+                                        on:input=move |ev| {
+                                            let value = event_target_value(&ev);
+                                            let mut current = skill_items();
+                                            if let Some(folder) = current.iter_mut().find(|item| item.name == folder_name_for_drop) {
+                                                folder.description = value;
+                                                save_skill_items(current);
+                                            }
+                                        }
+                                    ></textarea>
+                                    {if is_expanded {
+                                        view! {
+                                            <div class="skill-folder-contents">
+                                                {children.into_iter().map(|child| {
+                                                    let child_name = child.name.clone();
+                                                    let child_name_for_remove = child.name.clone();
+                                                    let child_description = if child.description.is_empty() {
+                                                        "Nenhuma descrição registrada.".to_string()
+                                                    } else {
+                                                        child.description.clone()
+                                                    };
+                                                    view! {
+                                                        <div
+                                                            class="skill-folder-child"
+                                                            draggable="true"
+                                                            on:dragstart=move |ev: web_sys::DragEvent| {
+                                                                if let Some(data) = ev.data_transfer() {
+                                                                    let _ = data.set_data("text/plain", &child_name);
+                                                                    data.set_effect_allowed("move");
+                                                                }
+                                                                dragged_skill.set(Some(child_name.clone()));
+                                                            }
+                                                        >
+                                                            <div class="item-title">
+                                                                <strong>{child.name}</strong>
+                                                                <button type="button" class="remove" on:click=move |_| remove_skill(child_name_for_remove.clone())>"Remover"</button>
+                                                            </div>
+                                                            <p>{child_description}</p>
+                                                        </div>
+                                                    }
+                                                }).collect_view()}
+                                            </div>
+                                        }.into_any()
                                     } else {
-                                        skill_text
+                                        view! { <p class="skill-folder-summary">{if entry.description.is_empty() { "Pasta de habilidades".to_string() } else { entry.description.clone() }}</p> }.into_any()
                                     }}
-                                </p>
-                            </div>
+                                </div>
+                            }.into_any()
                         }
                     }).collect_view()}
                 </div>
