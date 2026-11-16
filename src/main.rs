@@ -409,6 +409,7 @@ fn SheetApp(
                         let entry_name_for_remove = entry.name.clone();
                         let entry_name_for_edit = entry.name.clone();
                         let entry_name_for_save = entry.name.clone();
+                        let entry_name_for_description = entry.name.clone();
                         let is_editing = editing_skills.get().contains(&entry.name);
 
                         if entry.children.is_empty() {
@@ -481,7 +482,7 @@ fn SheetApp(
                                                 on:change=move |ev| {
                                                     let value = event_target_value(&ev);
                                                     let mut current = skill_items();
-                                                    if let Some(skill) = current.iter_mut().find(|item| item.name == entry_name_for_save) {
+                                                    if let Some(skill) = current.iter_mut().find(|item| item.name == entry_name_for_description) {
                                                         skill.description = value;
                                                         save_skill_items(current);
                                                     }
@@ -499,12 +500,10 @@ fn SheetApp(
                             let folder_name_for_description = entry.name.clone();
                             let folder_name_for_rename = entry.name.clone();
                             let folder_name_for_remove = entry.name.clone();
-                            let folder_name_for_edit = entry.name.clone();
                             let is_expanded = expanded_skill_folders.get().contains(&entry.name);
                             let folder_description = entry.description.clone();
                             let folder_name = entry.name.clone();
                             let children = entry.children.clone();
-                            let folder_editing = editing_skills.get().contains(&entry.name);
                             view! {
                                 <div
                                     class="item skill-folder"
@@ -512,7 +511,7 @@ fn SheetApp(
                                     on:drop=move |ev: web_sys::DragEvent| drop_skill_on(folder_name_for_drop.clone(), ev)
                                 >
                                     <div class="item-title skill-folder-heading">
-                                        {if is_expanded && folder_editing {
+                                        {if is_expanded {
                                             view! {
                                                 <input
                                                     class="skill-folder-name"
@@ -555,23 +554,6 @@ fn SheetApp(
                                                 class="remove"
                                                 on:click=move |_| remove_skill(folder_name_for_remove.clone())
                                             >"Remover"</button>
-                                            {if is_expanded {
-                                                view! {
-                                                    <button
-                                                        type="button"
-                                                        class="skill-edit-button"
-                                                        on:click=move |_| editing_skills.update(|names| {
-                                                            if let Some(index) = names.iter().position(|name| name == &folder_name_for_edit) {
-                                                                names.remove(index);
-                                                            } else {
-                                                                names.push(folder_name_for_edit.clone());
-                                                            }
-                                                        })
-                                                    >{if folder_editing { "Concluir" } else { "Editar" }}</button>
-                                                }.into_any()
-                                            } else {
-                                                view! { <></> }.into_any()
-                                            }}
                                             <button
                                                 type="button"
                                                 class="skill-folder-toggle"
@@ -594,7 +576,7 @@ fn SheetApp(
                                     {if is_expanded {
                                         view! {
                                             <div class="skill-folder-details">
-                                                {if folder_editing {
+                                                {
                                                     view! {
                                                         <textarea
                                                             class="skill-folder-description"
@@ -612,17 +594,14 @@ fn SheetApp(
                                                             }
                                                         ></textarea>
                                                     }.into_any()
-                                                } else {
-                                                    view! {
-                                                        <p class="skill-folder-description-text">{if folder_description.is_empty() { "Nenhuma descrição registrada.".to_string() } else { folder_description.clone() }}</p>
-                                                    }.into_any()
-                                                }}
+                                                }
                                                 <div class="skill-folder-contents">
                                                     {children.into_iter().map(|child| {
                                                         let child_name = child.name.clone();
                                                         let child_name_for_remove = child.name.clone();
                                                         let child_name_for_edit = child.name.clone();
                                                         let child_name_for_save = child.name.clone();
+                                                        let child_name_for_description = child.name.clone();
                                                         let child_description = if child.description.is_empty() {
                                                             "Nenhuma descrição registrada.".to_string()
                                                         } else {
@@ -684,8 +663,8 @@ fn SheetApp(
                                                                             on:change=move |ev| {
                                                                                 let value = event_target_value(&ev);
                                                                                 let mut current = skill_items();
-                                                                                if let Some(folder) = current.iter_mut().find(|item| item.children.iter().any(|child| child.name == child_name_for_save)) {
-                                                                                    if let Some(skill) = folder.children.iter_mut().find(|child| child.name == child_name_for_save) {
+                                                                                if let Some(folder) = current.iter_mut().find(|item| item.children.iter().any(|child| child.name == child_name_for_description)) {
+                                                                                    if let Some(skill) = folder.children.iter_mut().find(|child| child.name == child_name_for_description) {
                                                                                         skill.description = value;
                                                                                         save_skill_items(current);
                                                                                     }
