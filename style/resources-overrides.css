@@ -448,3 +448,121 @@ input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
+
+
+/* Pastas de habilidades e alvos de arrastar/soltar. */
+.skill-item-list {
+    gap: 10px;
+}
+
+.skill-entry {
+    cursor: grab;
+    transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.skill-entry:active {
+    cursor: grabbing;
+}
+
+.skill-entry[draggable="true"]:hover {
+    border-color: #60796c;
+    background: #1a2422;
+}
+
+.skill-drag-hint {
+    display: block;
+    margin-top: 8px;
+    color: #74877e;
+    font-size: 10px;
+    opacity: .8;
+}
+
+.skill-folder {
+    border-color: #52685d;
+    background: #1a2421;
+}
+
+.skill-folder-heading {
+    align-items: center;
+    gap: 9px;
+}
+
+.skill-folder-heading strong {
+    flex: 1;
+    min-width: 0;
+}
+
+.skill-folder-toggle {
+    display: inline-grid;
+    place-items: center;
+    width: 27px;
+    height: 27px;
+    padding: 0;
+    border: 1px solid #52685d;
+    border-radius: 6px;
+    background: #202d27;
+    color: #c0d8c9;
+    font-size: 17px;
+    cursor: pointer;
+}
+
+.skill-folder-toggle:hover {
+    background: #2a3a31;
+}
+
+.skill-folder-count {
+    color: #91a69b;
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+.skill-folder-description {
+    min-height: 52px;
+    margin-top: 12px;
+    padding: 9px 10px;
+    border-color: #35473e;
+    background: #151e1b;
+    font-size: 12px;
+}
+
+.skill-folder-summary {
+    margin: 9px 0 0;
+    color: #91a69b;
+    font-size: 11px;
+    white-space: pre-wrap;
+}
+
+.skill-folder-contents {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+    padding-left: 14px;
+    border-left: 2px solid #465d53;
+}
+
+.skill-folder-child {
+    padding: 11px 12px;
+    border: 1px solid #303f38;
+    border-radius: 7px;
+    background: #151d1b;
+}
+
+.skill-folder-child .item-title strong {
+    font-size: 12px;
+}
+
+.skill-folder-child p {
+    white-space: pre-wrap;
+}
+
+@media (max-width: 540px) {
+    .skill-folder-heading {
+        flex-wrap: wrap;
+    }
+
+    .skill-folder-count {
+        order: 3;
+        width: 100%;
+        padding-left: 36px;
+    }
+}
