@@ -254,6 +254,7 @@ fn merge_skill_entries(items: &mut Vec<SkillEntry>, source_name: &str, target_na
 
     let source = items.remove(source_index);
     let adjusted_target = if source_index < target_index { target_index - 1 } else { target_index };
+    let folder_number = items.len() + 1;
     let target = &mut items[adjusted_target];
 
     if target.children.is_empty() {
@@ -262,7 +263,7 @@ fn merge_skill_entries(items: &mut Vec<SkillEntry>, source_name: &str, target_na
             description: target.description.clone(),
             children: Vec::new(),
         };
-        target.name = format!("Pasta {}", items.len() + 1);
+        target.name = format!("Pasta {}", folder_number);
         target.description.clear();
         target.children = vec![original_target, source];
     } else {
@@ -361,12 +362,18 @@ fn SheetApp(
 
         let mut items = skill_items();
         if merge_skill_entries(&mut items, &source_name, &target_name) {
+            let folder_name = items.iter()
+                .find(|item| item.children.iter().any(|child| child.name == source_name)
+                    && item.children.iter().any(|child| child.name == target_name))
+                .map(|item| item.name.clone());
             save_skill_items(items);
-            expanded_skill_folders.update(|expanded| {
-                if !expanded.contains(&target_name) {
-                    expanded.push(target_name);
-                }
-            });
+            if let Some(folder_name) = folder_name {
+                expanded_skill_folders.update(|expanded| {
+                    if !expanded.contains(&folder_name) {
+                        expanded.push(folder_name);
+                    }
+                });
+            }
         }
         dragged_skill.set(None);
     };
@@ -434,9 +441,9 @@ fn SheetApp(
                                 </div>
                             }.into_any()
                         } else {
-                            let folder_name = entry.name.clone();
                             let folder_name_for_toggle = entry.name.clone();
                             let folder_name_for_drop = entry.name.clone();
+                            let folder_name_for_description = entry.name.clone();
                             let folder_name_for_remove = entry.name.clone();
                             let is_expanded = expanded_skill_folders.get().contains(&entry.name);
                             let folder_description = entry.description.clone();
@@ -444,14 +451,6 @@ fn SheetApp(
                             view! {
                                 <div
                                     class="item skill-folder"
-                                    draggable="true"
-                                    on:dragstart=move |ev: web_sys::DragEvent| {
-                                        if let Some(data) = ev.data_transfer() {
-                                            let _ = data.set_data("text/plain", &folder_name);
-                                            data.set_effect_allowed("move");
-                                        }
-                                        dragged_skill.set(Some(folder_name.clone()));
-                                    }
                                     on:dragover=|ev: web_sys::DragEvent| ev.prevent_default()
                                     on:drop=move |ev: web_sys::DragEvent| drop_skill_on(folder_name_for_drop.clone(), ev)
                                 >
@@ -486,7 +485,7 @@ fn SheetApp(
                                         on:input=move |ev| {
                                             let value = event_target_value(&ev);
                                             let mut current = skill_items();
-                                            if let Some(folder) = current.iter_mut().find(|item| item.name == folder_name_for_drop) {
+                                            if let Some(folder) = current.iter_mut().find(|item| item.name == folder_name_for_description) {
                                                 folder.description = value;
                                                 save_skill_items(current);
                                             }
@@ -496,7 +495,6 @@ fn SheetApp(
                                         view! {
                                             <div class="skill-folder-contents">
                                                 {children.into_iter().map(|child| {
-                                                    let child_name = child.name.clone();
                                                     let child_name_for_remove = child.name.clone();
                                                     let child_description = if child.description.is_empty() {
                                                         "Nenhuma descrição registrada.".to_string()
@@ -506,14 +504,6 @@ fn SheetApp(
                                                     view! {
                                                         <div
                                                             class="skill-folder-child"
-                                                            draggable="true"
-                                                            on:dragstart=move |ev: web_sys::DragEvent| {
-                                                                if let Some(data) = ev.data_transfer() {
-                                                                    let _ = data.set_data("text/plain", &child_name);
-                                                                    data.set_effect_allowed("move");
-                                                                }
-                                                                dragged_skill.set(Some(child_name.clone()));
-                                                            }
                                                         >
                                                             <div class="item-title">
                                                                 <strong>{child.name}</strong>
