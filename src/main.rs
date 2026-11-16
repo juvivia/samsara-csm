@@ -435,16 +435,17 @@ fn SheetApp(
                                         >"Remover"</button>
                                     </div>
                                     <p>{description}</p>
-                                    <span class="skill-drag-hint">"Arraste sobre outra habilidade para agrupar"</span>
                                 </div>
                             }.into_any()
                         } else {
                             let folder_name_for_toggle = entry.name.clone();
                             let folder_name_for_drop = entry.name.clone();
                             let folder_name_for_description = entry.name.clone();
+                            let folder_name_for_rename = entry.name.clone();
                             let folder_name_for_remove = entry.name.clone();
                             let is_expanded = expanded_skill_folders.get().contains(&entry.name);
                             let folder_description = entry.description.clone();
+                            let folder_name = entry.name.clone();
                             let children = entry.children.clone();
                             view! {
                                 <div
@@ -467,7 +468,30 @@ fn SheetApp(
                                         >
                                             {if is_expanded { "▾" } else { "▸" }}
                                         </button>
-                                        <strong>{entry.name}</strong>
+                                        <input
+                                            class="skill-folder-name"
+                                            aria-label="Nome da pasta"
+                                            prop:value=folder_name
+                                            on:change=move |ev| {
+                                                let new_name = event_target_value(&ev).trim().to_string();
+                                                if new_name.is_empty() { return; }
+                                                let mut current = skill_items();
+                                                if current.iter().any(|item| item.name == new_name && item.name != folder_name_for_rename) {
+                                                    return;
+                                                }
+                                                if let Some(folder) = current.iter_mut().find(|item| item.name == folder_name_for_rename) {
+                                                    folder.name = new_name.clone();
+                                                    save_skill_items(current);
+                                                    expanded_skill_folders.update(|expanded| {
+                                                        for name in expanded.iter_mut() {
+                                                            if name == &folder_name_for_rename {
+                                                                *name = new_name.clone();
+                                                            }
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        />
                                         <span class="skill-folder-count">{format!("{} habilidades", children.len())}</span>
                                         <button
                                             type="button"
@@ -478,7 +502,8 @@ fn SheetApp(
                                     <textarea
                                         class="skill-folder-description"
                                         rows="2"
-                                        placeholder="Descrição da pasta"
+                                        placeholder="Descrição da pasta..."
+                                        aria-label="Descrição da pasta"
                                         prop:value=folder_description
                                         on:input=move |ev| {
                                             let value = event_target_value(&ev);
@@ -514,7 +539,7 @@ fn SheetApp(
                                             </div>
                                         }.into_any()
                                     } else {
-                                        view! { <p class="skill-folder-summary">{if entry.description.is_empty() { "Pasta de habilidades".to_string() } else { entry.description.clone() }}</p> }.into_any()
+                                        view! { <></> }.into_any()
                                     }}
                                 </div>
                             }.into_any()
