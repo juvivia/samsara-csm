@@ -355,3 +355,83 @@
     outline: 2px solid #a7c6b1;
     outline-offset: 2px;
 }
+
+
+/* Vantagens por tipo de teste — seção da aba Atributos. */
+.test-advantages-section {
+    margin-top: 24px;
+}
+
+.test-advantages-section h3 {
+    margin-bottom: 6px;
+}
+
+.test-advantages-section > .hint {
+    margin: 0 0 14px;
+}
+
+.test-advantages-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.test-advantage-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    padding: 12px 9px;
+    border: 1px solid #303b3b;
+    border-radius: 8px;
+    background: #1b2425;
+    text-align: center;
+}
+
+.test-advantage-name {
+    color: #dce5df;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.test-advantage-formula {
+    color: #91a69b;
+    font-size: 10px;
+}
+
+.test-advantage-card input {
+    width: 64px;
+    max-width: 100%;
+    margin-top: 4px;
+    padding: 6px;
+    border: 1px solid #364148;
+    border-radius: 5px;
+    background: #171d21;
+    color: #b4d1c2;
+    font-size: 16px;
+    text-align: center;
+}
+
+.test-advantage-card input:disabled {
+    opacity: .72;
+    cursor: not-allowed;
+}
+
+.test-advantage-card input:not(:disabled) {
+    border-color: #829f8e;
+    background: #202c27;
+}
+
+@media (max-width: 700px) {
+    .test-advantages-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 420px) {
+    .test-advantages-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+}
