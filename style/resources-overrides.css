@@ -585,3 +585,140 @@ input[type="number"]::-webkit-outer-spin-button {
 .skill-folder-description:focus {
     border-bottom: 1px solid #52685d;
 }
+
+
+/* Controles coesos para edição de habilidades e pastas. */
+.skill-folder-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.skill-folder-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+}
+
+.skill-folder-count {
+    display: none !important;
+}
+
+.skill-folder-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    height: auto;
+    min-width: 18px;
+    padding: 2px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #b7c8bd;
+    font-size: 17px;
+    line-height: 1;
+}
+
+.skill-folder-toggle:hover {
+    background: transparent;
+    color: #ffffff;
+}
+
+.skill-folder-name {
+    flex: 1;
+    min-width: 0;
+}
+
+.skill-folder-summary,
+.skill-folder-description-text,
+.skill-folder-description {
+    margin: 8px 0 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #a4b0b6;
+    font: inherit;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.skill-folder-description {
+    width: 100%;
+    min-height: 24px;
+    resize: vertical;
+    outline: none;
+}
+
+.skill-folder-description:focus {
+    border-bottom: 1px solid #52685d;
+}
+
+.skill-entry-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.skill-entry-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+    margin-left: auto;
+}
+
+.skill-edit-button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #9dbba8;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.skill-edit-button:hover {
+    color: #d5e7da;
+    text-decoration: underline;
+}
+
+.skill-edit-name,
+.skill-edit-description {
+    min-width: 0;
+    width: 100%;
+    padding: 4px 0;
+    border: 0;
+    border-bottom: 1px solid #52685d;
+    border-radius: 0;
+    outline: none;
+    background: transparent;
+    color: #dce5df;
+    font: inherit;
+    font-size: 13px;
+}
+
+.skill-edit-description {
+    display: block;
+    margin-top: 8px;
+    color: #a4b0b6;
+    font-size: 12px;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.skill-folder-child .skill-entry-actions {
+    flex-shrink: 0;
+}
+
+@media (max-width: 540px) {
+    .skill-folder-heading {
+        flex-wrap: nowrap;
+    }
+
+    .skill-folder-actions {
+        gap: 8px;
+    }
+}
