@@ -418,9 +418,7 @@ pub(crate) fn Inventory(sheet: RwSignal<crate::Sheet>) -> impl IntoView {
                     </div>
                 }.into_any()
             }
-            None => view! {
-                <p class="hint">"Clique em um item para editar seu nome, informações e cor."</p>
-            }.into_any(),
+            None => view! { <></> }.into_any(),
         }
     };
 
