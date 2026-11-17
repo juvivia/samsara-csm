@@ -458,7 +458,20 @@ fn SheetApp(
                                             view! { <strong>{entry.name.clone()}</strong> }.into_any()
                                         }}
                                         <div class="skill-entry-actions">
-                                            <button type="button" class="remove" on:click=move |_| remove_skill(entry_name_for_remove.clone())>"Remover"</button>
+                                            <button
+                                                type="button"
+                                                class="inventory-icon-button inventory-delete-icon skill-remove-icon"
+                                                aria-label="Remover habilidade"
+                                                title="Remover habilidade"
+                                                on:click=move |_| remove_skill(entry_name_for_remove.clone())
+                                            >
+                                                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M3 6h18"/>
+                                                    <path d="M8 6V4h8v2"/>
+                                                    <path d="m19 6-1 14H6L5 6"/>
+                                                    <path d="M10 11v5M14 11v5"/>
+                                                </svg>
+                                            </button>
                                             <button
                                                 type="button"
                                                 class="skill-edit-button"
@@ -551,9 +564,18 @@ fn SheetApp(
                                         <div class="skill-folder-actions">
                                             <button
                                                 type="button"
-                                                class="remove"
+                                                class="inventory-icon-button inventory-delete-icon skill-remove-icon"
+                                                aria-label="Remover habilidade"
+                                                title="Remover habilidade"
                                                 on:click=move |_| remove_skill(folder_name_for_remove.clone())
-                                            >"Remover"</button>
+                                            >
+                                                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M3 6h18"/>
+                                                    <path d="M8 6V4h8v2"/>
+                                                    <path d="m19 6-1 14H6L5 6"/>
+                                                    <path d="M10 11v5M14 11v5"/>
+                                                </svg>
+                                            </button>
                                             <button
                                                 type="button"
                                                 class="skill-folder-toggle"
@@ -569,7 +591,19 @@ fn SheetApp(
                                                     editing_skills.update(|names| names.retain(|name| name != &folder_name_for_toggle));
                                                 }
                                             >
-                                                {if is_expanded { "▾" } else { "▸" }}
+                                                {if is_expanded {
+                                                    view! {
+                                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                            <path d="m6 9 6 6 6-6"/>
+                                                        </svg>
+                                                    }.into_any()
+                                                } else {
+                                                    view! {
+                                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                            <path d="m9 6 6 6-6 6"/>
+                                                        </svg>
+                                                    }.into_any()
+                                                }}
                                             </button>
                                         </div>
                                     </div>
@@ -639,7 +673,20 @@ fn SheetApp(
                                                                         view! { <strong>{child.name.clone()}</strong> }.into_any()
                                                                     }}
                                                                     <div class="skill-entry-actions">
-                                                                        <button type="button" class="remove" on:click=move |_| remove_skill(child_name_for_remove.clone())>"Remover"</button>
+                                                                        <button
+                                                type="button"
+                                                class="inventory-icon-button inventory-delete-icon skill-remove-icon"
+                                                aria-label="Remover habilidade"
+                                                title="Remover habilidade"
+                                                on:click=move |_| remove_skill(child_name_for_remove.clone())
+                                            >
+                                                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M3 6h18"/>
+                                                    <path d="M8 6V4h8v2"/>
+                                                    <path d="m19 6-1 14H6L5 6"/>
+                                                    <path d="M10 11v5M14 11v5"/>
+                                                </svg>
+                                            </button>
                                                                         <button
                                                                             type="button"
                                                                             class="skill-edit-button"
