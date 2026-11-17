@@ -331,6 +331,7 @@ pub(crate) fn Inventory(sheet: RwSignal<crate::Sheet>) -> impl IntoView {
         match item {
             Some(item) => {
                 let item_id = item.id;
+                let item_display_name = if item.name.trim().is_empty() { "Item".to_string() } else { item.name.clone() };
                 view! {
                     <div class="inventory-editor">
                         <div class="section-heading inventory-editor-heading">
@@ -342,13 +343,7 @@ pub(crate) fn Inventory(sheet: RwSignal<crate::Sheet>) -> impl IntoView {
                                     aria-label="Remover item"
                                     title="Remover item"
                                     on:click=move |_| {
-                                        let item_name = item.name.trim();
-                                        let display_name = if item_name.is_empty() {
-                                            "Item".to_string()
-                                        } else {
-                                            item_name.to_string()
-                                        };
-                                        pending_delete.set(Some((item_id, display_name)));
+                                        pending_delete.set(Some((item_id, item_display_name.clone())));
                                     }
                                 >
                                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
