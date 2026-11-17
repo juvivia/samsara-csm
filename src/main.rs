@@ -748,7 +748,21 @@ fn SheetApp(
                     <h1>"SAMSARA"</h1>
                     <p>"Character Sheet Manager"</p>
                 </div>
-                <span class="level">"NÍVEL " {move || sheet.get().level}</span>
+                <label class="level level-control">
+                    <span>"NÍVEL"</span>
+                    <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        aria-label="Nível do personagem"
+                        prop:value=move || sheet.get().level.to_string()
+                        on:input=move |ev| {
+                            if let Ok(v) = event_target_value(&ev).parse::<u8>() {
+                                sheet.update(|s| s.level = v.clamp(1, 10));
+                            }
+                        }
+                    />
+                </label>
             </header>
 
             <nav class="tabs" aria-label="Seções da ficha">
@@ -767,13 +781,23 @@ fn SheetApp(
                 <Show when=move || tab.get() == 0>
                     <div class="character-profile-layout">
                         <div class="portrait-card">
-                            <Show when=move || portrait_url.get().is_some() fallback=|| view! {
-                                <div class="portrait-placeholder"><span>"Sem imagem"</span></div>
-                            }>
-                                <img class="character-portrait" src=move || portrait_url.get().unwrap_or_default() alt="Retrato do personagem" />
-                            </Show>
-                            <label class="portrait-upload">
-                                {move || if portrait_uploading.get() { "Enviando..." } else if portrait_url.get().is_some() { "Trocar imagem" } else { "Adicionar imagem" }}
+                            <label
+                                class="portrait-upload"
+                                class:uploading=move || portrait_uploading.get()
+                                title="Adicionar ou trocar retrato"
+                            >
+                                <Show when=move || portrait_url.get().is_some() fallback=|| view! {
+                                    <div class="portrait-placeholder"><span>"Sem imagem"</span></div>
+                                }>
+                                    <img class="character-portrait" src=move || portrait_url.get().unwrap_or_default() alt="Retrato do personagem" />
+                                </Show>
+                                <span class="portrait-upload-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M4 7h3l1.5-2h7L17 7h3v12H4z"/>
+                                        <circle cx="12" cy="13" r="3.2"/>
+                                        <path d="M18 3v4M16 5h4"/>
+                                    </svg>
+                                </span>
                                 <input
                                     class="portrait-file-input"
                                     type="file"
@@ -849,14 +873,6 @@ fn SheetApp(
                                     <option value="Cozinheiro" selected=move || sheet.get().class_name == "Cozinheiro">"Cozinheiro"</option>
                                     <option value="Rushdown" selected=move || sheet.get().class_name == "Rushdown">"Rushdown"</option>
                                 </select>
-                            </label>
-                            <label>
-                                "Nível"
-                                <input type="number" min="1" max="10" prop:value=move || sheet.get().level.to_string() on:input=move |ev| {
-                                    if let Ok(v) = event_target_value(&ev).parse::<u8>() {
-                                        sheet.update(|s| s.level = v.clamp(1, 10));
-                                    }
-                                } />
                             </label>
                         </div>
                     </div>
