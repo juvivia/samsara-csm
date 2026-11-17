@@ -722,3 +722,71 @@ input[type="number"]::-webkit-outer-spin-button {
         gap: 8px;
     }
 }
+
+
+/* Editor compacto de itens do inventário, incluindo campo de informações. */
+.inventory-editor {
+    margin-top: 14px;
+    padding: 12px 14px;
+}
+
+.inventory-editor .section-heading {
+    margin-bottom: 9px;
+}
+
+.inventory-editor label {
+    margin-top: 8px;
+    gap: 5px;
+    font-size: 12px;
+}
+
+.inventory-editor input[type="text"] {
+    min-height: 36px;
+    padding: 7px 10px;
+    font-size: 13px;
+}
+
+.inventory-editor .inventory-description-field textarea {
+    display: block;
+    width: 100%;
+    min-height: 64px;
+    max-height: 120px;
+    padding: 8px 10px;
+    border: 1px solid #364148;
+    border-radius: 7px;
+    background: #1b2226;
+    color: #e1e8e3;
+    font: inherit;
+    font-size: 12px;
+    line-height: 1.45;
+    resize: vertical;
+}
+
+.inventory-editor .inventory-description-field textarea::placeholder {
+    color: #849198;
+}
+
+.inventory-editor .inventory-description-field textarea:focus {
+    outline: none;
+    border-color: #718f7f;
+}
+
+.inventory-editor .inventory-color {
+    height: 34px;
+    padding: 3px;
+}
+
+.inventory-editor .inventory-delete {
+    margin-top: 9px;
+    font-size: 13px;
+}
+
+@media (max-width: 540px) {
+    .inventory-editor {
+        padding: 10px;
+    }
+
+    .inventory-editor .inventory-description-field textarea {
+        min-height: 58px;
+    }
+}
