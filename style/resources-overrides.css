@@ -939,3 +939,41 @@ input[type="number"]::-webkit-outer-spin-button {
         padding: 18px;
     }
 }
+
+
+/* Ações de habilidades no mesmo padrão minimalista do inventário. */
+.skill-remove-icon {
+    width: 27px;
+    height: 27px;
+    flex: 0 0 27px;
+}
+
+.skill-entry-actions .skill-remove-icon {
+    margin: 0;
+}
+
+.skill-folder-toggle {
+    width: 27px;
+    height: 27px;
+    min-width: 27px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: #aab6b1;
+    transition: color .15s ease, background .15s ease;
+}
+
+.skill-folder-toggle:hover {
+    background: #26312d;
+    color: #e5eee8;
+}
+
+.skill-folder-toggle svg {
+    display: block;
+    transition: transform .16s ease;
+}
+
+.skill-folder-toggle:focus-visible {
+    outline: 2px solid #8ba997;
+    outline-offset: 2px;
+}
