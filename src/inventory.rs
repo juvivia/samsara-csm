@@ -11,6 +11,8 @@ pub(crate) struct InventoryItem {
     pub(crate) height: u8,
     pub(crate) name: String,
     pub(crate) color: String,
+    #[serde(default)]
+    pub(crate) description: String,
 }
 
 pub(crate) fn default_inventory_width() -> u8 {
@@ -245,6 +247,7 @@ pub(crate) fn Inventory(sheet: RwSignal<crate::Sheet>) -> impl IntoView {
                                         height: item_height,
                                         name: String::new(),
                                         color: "#536b60".to_string(),
+                                        description: String::new(),
                                     });
                                     new_id = Some(id);
                                 }
@@ -351,6 +354,23 @@ pub(crate) fn Inventory(sheet: RwSignal<crate::Sheet>) -> impl IntoView {
                                 }
                             />
                         </label>
+                        <label class="inventory-description-field">
+                            "Informações do item"
+                            <textarea
+                                rows="3"
+                                maxlength="2000"
+                                placeholder="Descreva para que serve, como funciona ou outras informações importantes..."
+                                prop:value=item.description.clone()
+                                on:input=move |ev| {
+                                    let value = event_target_value(&ev);
+                                    sheet.update(|s| {
+                                        if let Some(i) = s.inventory_items.iter_mut().find(|i| i.id == item_id) {
+                                            i.description = value;
+                                        }
+                                    });
+                                }
+                            ></textarea>
+                        </label>
                         <label>
                             "Cor do item"
                             <input
@@ -381,7 +401,7 @@ pub(crate) fn Inventory(sheet: RwSignal<crate::Sheet>) -> impl IntoView {
                 }.into_any()
             }
             None => view! {
-                <p class="hint">"Clique em um item para editar seu nome ou sua cor."</p>
+                <p class="hint">"Clique em um item para editar seu nome, informações e cor."</p>
             }.into_any(),
         }
     };
