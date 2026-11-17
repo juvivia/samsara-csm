@@ -191,6 +191,7 @@ fn coordinate_to_cell(
 pub(crate) fn Inventory(sheet: RwSignal<crate::Sheet>) -> impl IntoView {
     let selected_size = RwSignal::new("1x1".to_string());
     let selected_item = RwSignal::new(None::<u32>);
+    let pending_delete = RwSignal::new(None::<(u32, String)>);
     let dragged_item = RwSignal::new(None::<u32>);
     let grid_ref = NodeRef::<leptos::html::Div>::new();
 
@@ -341,8 +342,13 @@ pub(crate) fn Inventory(sheet: RwSignal<crate::Sheet>) -> impl IntoView {
                                     aria-label="Remover item"
                                     title="Remover item"
                                     on:click=move |_| {
-                                        sheet.update(|s| s.inventory_items.retain(|i| i.id != item_id));
-                                        selected_item.set(None);
+                                        let item_name = item.name.trim();
+                                        let display_name = if item_name.is_empty() {
+                                            "Item".to_string()
+                                        } else {
+                                            item_name.to_string()
+                                        };
+                                        pending_delete.set(Some((item_id, display_name)));
                                     }
                                 >
                                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -539,6 +545,49 @@ pub(crate) fn Inventory(sheet: RwSignal<crate::Sheet>) -> impl IntoView {
             </div>
 
             {selected_details}
+
+            {move || pending_delete.get().map(|(delete_id, delete_name)| {
+                let confirm_name = delete_name.clone();
+                view! {
+                    <div
+                        class="inventory-confirm-backdrop"
+                        role="presentation"
+                        on:click=move |_| pending_delete.set(None)
+                    >
+                        <div
+                            class="inventory-confirm-dialog"
+                            role="alertdialog"
+                            aria-modal="true"
+                            aria-labelledby="inventory-confirm-title"
+                            aria-describedby="inventory-confirm-message"
+                            on:click=|ev: web_sys::MouseEvent| ev.stop_propagation()
+                        >
+                            <h3 id="inventory-confirm-title">"Excluir item?"</h3>
+                            <p id="inventory-confirm-message">
+                                "Deseja realmente excluir o item "
+                                <strong>{confirm_name}</strong>
+                                "?"
+                            </p>
+                            <div class="inventory-confirm-actions">
+                                <button
+                                    type="button"
+                                    class="inventory-confirm-no"
+                                    on:click=move |_| pending_delete.set(None)
+                                >"Não"</button>
+                                <button
+                                    type="button"
+                                    class="inventory-confirm-yes"
+                                    on:click=move |_| {
+                                        sheet.update(|s| s.inventory_items.retain(|item| item.id != delete_id));
+                                        selected_item.set(None);
+                                        pending_delete.set(None);
+                                    }
+                                >"Sim"</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            })}
         </section>
     }
 }
