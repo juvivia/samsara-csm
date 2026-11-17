@@ -332,11 +332,38 @@ pub(crate) fn Inventory(sheet: RwSignal<crate::Sheet>) -> impl IntoView {
                 let item_id = item.id;
                 view! {
                     <div class="inventory-editor">
-                        <div class="section-heading">
+                        <div class="section-heading inventory-editor-heading">
                             <h3>"Editar item"</h3>
-                            <button type="button" class="remove" on:click=move |_| selected_item.set(None)>
-                                "Fechar"
-                            </button>
+                            <div class="inventory-editor-actions">
+                                <button
+                                    type="button"
+                                    class="inventory-icon-button inventory-delete-icon"
+                                    aria-label="Remover item"
+                                    title="Remover item"
+                                    on:click=move |_| {
+                                        sheet.update(|s| s.inventory_items.retain(|i| i.id != item_id));
+                                        selected_item.set(None);
+                                    }
+                                >
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M3 6h18"/>
+                                        <path d="M8 6V4h8v2"/>
+                                        <path d="m19 6-1 14H6L5 6"/>
+                                        <path d="M10 11v5M14 11v5"/>
+                                    </svg>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="inventory-icon-button inventory-close-icon"
+                                    aria-label="Fechar editor"
+                                    title="Fechar"
+                                    on:click=move |_| selected_item.set(None)
+                                >
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+                                        <path d="m18 6-12 12M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         <label>
                             "Nome do item"
@@ -387,16 +414,6 @@ pub(crate) fn Inventory(sheet: RwSignal<crate::Sheet>) -> impl IntoView {
                                 }
                             />
                         </label>
-                        <button
-                            type="button"
-                            class="remove inventory-delete"
-                            on:click=move |_| {
-                                sheet.update(|s| s.inventory_items.retain(|i| i.id != item_id));
-                                selected_item.set(None);
-                            }
-                        >
-                            "Remover item"
-                        </button>
                     </div>
                 }.into_any()
             }
