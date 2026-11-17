@@ -846,3 +846,96 @@ input[type="number"]::-webkit-outer-spin-button {
 .inventory-editor .inventory-delete {
     display: none;
 }
+
+
+/* Confirmação centralizada antes de excluir um item do inventário. */
+.inventory-confirm-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(5, 9, 10, 0.68);
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+}
+
+.inventory-confirm-dialog {
+    width: min(100%, 390px);
+    padding: 22px;
+    border: 1px solid #405149;
+    border-radius: 12px;
+    background: #171f1e;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.48);
+    color: #e1e8e3;
+    animation: inventory-confirm-appear .16s ease-out;
+}
+
+.inventory-confirm-dialog h3 {
+    margin: 0 0 12px;
+    font-size: 17px;
+    font-weight: 650;
+}
+
+.inventory-confirm-dialog p {
+    margin: 0;
+    color: #aab6b1;
+    font-size: 14px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.inventory-confirm-dialog p strong {
+    color: #e4ece7;
+}
+
+.inventory-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 9px;
+    margin-top: 22px;
+}
+
+.inventory-confirm-actions button {
+    min-width: 78px;
+    padding: 8px 15px;
+    border: 1px solid #405149;
+    border-radius: 7px;
+    background: #202a27;
+    color: #dce5df;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.inventory-confirm-actions .inventory-confirm-no:hover {
+    background: #2b3732;
+}
+
+.inventory-confirm-actions .inventory-confirm-yes {
+    border-color: #744646;
+    background: #492d2d;
+    color: #f0dada;
+}
+
+.inventory-confirm-actions .inventory-confirm-yes:hover {
+    background: #603737;
+}
+
+.inventory-confirm-actions button:focus-visible {
+    outline: 2px solid #91ad9b;
+    outline-offset: 2px;
+}
+
+@keyframes inventory-confirm-appear {
+    from { opacity: 0; transform: translateY(5px) scale(.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 540px) {
+    .inventory-confirm-dialog {
+        padding: 18px;
+    }
+}
