@@ -790,3 +790,59 @@ input[type="number"]::-webkit-outer-spin-button {
         min-height: 58px;
     }
 }
+
+
+/* Ações do editor do inventário reunidas no canto superior direito. */
+.inventory-editor-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.inventory-editor-actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-left: auto;
+}
+
+.inventory-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: #aab6b1;
+    cursor: pointer;
+    transition: color .15s ease, background .15s ease, border-color .15s ease;
+}
+
+.inventory-icon-button:hover {
+    background: #26312d;
+    border-color: #3b4b44;
+    color: #e5eee8;
+}
+
+.inventory-delete-icon:hover {
+    color: #e29a9a;
+    background: #342323;
+    border-color: #5a3838;
+}
+
+.inventory-close-icon:hover {
+    color: #e5eee8;
+}
+
+.inventory-icon-button:focus-visible {
+    outline: 2px solid #8ba997;
+    outline-offset: 2px;
+}
+
+.inventory-editor .inventory-delete {
+    display: none;
+}
