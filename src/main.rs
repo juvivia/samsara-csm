@@ -760,7 +760,7 @@ fn SheetApp(
     };
 
     view! {
-        <main class="shell" attr:data-theme=move || selected_theme.get()>
+        <main class="shell" data-theme=move || selected_theme.get()>
             <header class="topbar">
                 <div>
                     <h1>"SAMSARA"</h1>
