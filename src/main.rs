@@ -180,7 +180,7 @@ fn load_color_theme(character_id: &str) -> String {
     web_sys::window()
         .and_then(|w| w.local_storage().ok().flatten())
         .and_then(|storage| storage.get_item(&storage_key).ok().flatten())
-        .filter(|theme| matches!(theme.as_str(), "green" | "red" | "yellow" | "purple" | "mono"))
+        .filter(|theme| matches!(theme.as_str(), "green" | "blue" | "red" | "yellow" | "purple" | "mono"))
         .unwrap_or_else(|| "green".to_string())
 }
 
@@ -1054,6 +1054,10 @@ fn SheetApp(
                             <button type="button" class="theme-option" class:active=move || selected_theme.get() == "green" on:click=move |_| { selected_theme.set("green".to_string()); theme_picker_open.set(false); }>
                                 <span class="theme-swatch theme-swatch-green"></span><span>"Verde"</span>
                                 <Show when=move || selected_theme.get() == "green"><span class="theme-check">"✓"</span></Show>
+                            </button>
+                            <button type="button" class="theme-option" class:active=move || selected_theme.get() == "blue" on:click=move |_| { selected_theme.set("blue".to_string()); theme_picker_open.set(false); }>
+                                <span class="theme-swatch theme-swatch-blue"></span><span>"Azul"</span>
+                                <Show when=move || selected_theme.get() == "blue"><span class="theme-check">"✓"</span></Show>
                             </button>
                             <button type="button" class="theme-option" class:active=move || selected_theme.get() == "red" on:click=move |_| { selected_theme.set("red".to_string()); theme_picker_open.set(false); }>
                                 <span class="theme-swatch theme-swatch-red"></span><span>"Vermelho"</span>
