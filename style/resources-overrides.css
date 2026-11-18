@@ -444,9 +444,9 @@
     width: 25px;
     height: 25px;
     padding: 0;
-    border: 1px solid rgba(235, 244, 238, 0.28);
+    border: 1px solid var(--theme-c-364148);
     border-radius: 7px;
-    background: rgba(20, 29, 27, 0.82);
+    background: var(--theme-c-171d21);
     color: var(--theme-c-e5eee8);
     font-size: 17px;
     font-weight: 500;
@@ -458,7 +458,7 @@
 }
 
 .inventory-item .inventory-rotate:hover {
-    background: rgba(39, 59, 49, 0.96);
+    background: var(--theme-c-202c27);
     border-color: var(--theme-c-a7c6b1);
     color: var(--theme-c-ffffff);
     transform: rotate(35deg);
