@@ -175,10 +175,11 @@ fn save_sheet(sheet: &Sheet) {
     }
 }
 
-fn load_color_theme() -> String {
+fn load_color_theme(character_id: &str) -> String {
+    let storage_key = format!("samsara-color-theme-{}", character_id);
     web_sys::window()
         .and_then(|w| w.local_storage().ok().flatten())
-        .and_then(|storage| storage.get_item("samsara-color-theme").ok().flatten())
+        .and_then(|storage| storage.get_item(&storage_key).ok().flatten())
         .filter(|theme| matches!(theme.as_str(), "green" | "red" | "yellow" | "purple" | "mono"))
         .unwrap_or_else(|| "green".to_string())
 }
@@ -311,12 +312,13 @@ fn SheetApp(
     let editing_skills = RwSignal::new(Vec::<String>::new());
     let portrait_url = RwSignal::new(None::<String>);
     let portrait_uploading = RwSignal::new(false);
-    let selected_theme = RwSignal::new(load_color_theme());
+    let selected_theme = RwSignal::new(load_color_theme(&character_id.get()));
     let theme_picker_open = RwSignal::new(false);
 
     Effect::new(move |_| {
+        let storage_key = format!("samsara-color-theme-{}", character_id.get());
         if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
-            let _ = storage.set_item("samsara-color-theme", &selected_theme.get());
+            let _ = storage.set_item(&storage_key, &selected_theme.get());
         }
     });
 
