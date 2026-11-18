@@ -895,6 +895,86 @@ fn SheetApp(
                         </div>
                     </div>
 
+                    <h2>"Atributos"</h2>
+                    <div class="resource-heading">
+                        <h3>"Recursos"</h3>
+                    </div>
+                    <div class="resource-grid">
+                        <label class="resource-card">
+                            "PV"
+                            <input type="number" aria-label="PV atual" prop:value=move || sheet.get().pv.to_string() on:input=move |ev| {
+                                if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| s.pv = v); }
+                            } />
+                            <input class="resource-max-input" type="number" min="0" disabled=move || !resource_editing.get() prop:value=move || {
+                                let s = sheet.get();
+                                if s.pv_max > 0 { s.pv_max } else { s.pv }.to_string()
+                            } on:input=move |ev| {
+                                if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| s.pv_max = v.max(0)); }
+                            } />
+                        </label>
+                        <label class="resource-card">
+                            "SAN"
+                            <input type="number" aria-label="SAN atual" prop:value=move || sheet.get().san.to_string() on:input=move |ev| {
+                                if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| s.san = v); }
+                            } />
+                            <input class="resource-max-input" type="number" min="0" disabled=move || !resource_editing.get() prop:value=move || {
+                                let s = sheet.get();
+                                if s.san_max > 0 { s.san_max } else { s.san }.to_string()
+                            } on:input=move |ev| {
+                                if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| s.san_max = v.max(0)); }
+                            } />
+                        </label>
+                        <label class="resource-card">
+                            "PM"
+                            <input type="number" aria-label="PM atual" prop:value=move || sheet.get().pm.to_string() on:input=move |ev| {
+                                if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| s.pm = v); }
+                            } />
+                            <input class="resource-max-input" type="number" min="0" disabled=move || !resource_editing.get() prop:value=move || {
+                                let s = sheet.get();
+                                if s.pm_max > 0 { s.pm_max } else { s.pm }.to_string()
+                            } on:input=move |ev| {
+                                if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| s.pm_max = v.max(0)); }
+                            } />
+                        </label>
+                    </div>
+
+                    <h3>"Atributos"</h3>
+                    <div class="stat-grid">
+                        <div class="stat"><strong>"INT"</strong><input aria-label="Atributo INT" type="number" disabled=move || !resource_editing.get() prop:value=move || sheet.get().stats[0].to_string() on:input=move |ev| { if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| s.stats[0] = v); } } /></div>
+                        <div class="stat"><strong>"FIS"</strong><input aria-label="Atributo FIS" type="number" disabled=move || !resource_editing.get() prop:value=move || sheet.get().stats[1].to_string() on:input=move |ev| { if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| s.stats[1] = v); } } /></div>
+                        <div class="stat"><strong>"DOM"</strong><input aria-label="Atributo DOM" type="number" disabled=move || !resource_editing.get() prop:value=move || sheet.get().stats[2].to_string() on:input=move |ev| { if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| s.stats[2] = v); } } /></div>
+                        <div class="stat"><strong>"VEL"</strong><input aria-label="Atributo VEL" type="number" disabled=move || !resource_editing.get() prop:value=move || sheet.get().stats[3].to_string() on:input=move |ev| { if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| s.stats[3] = v); } } /></div>
+                        <div class="stat"><strong>"HAB"</strong><input aria-label="Atributo HAB" type="number" disabled=move || !resource_editing.get() prop:value=move || sheet.get().stats[4].to_string() on:input=move |ev| { if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| s.stats[4] = v); } } /></div>
+                    </div>
+
+
+                    <h3>"Habilidades"</h3>
+                    <div class="skill-field">
+                        <div class="skill-form">
+                            <Show when=move || skill_form_open.get()>
+                                <input
+                                    class="skill-input"
+                                    placeholder="Nome da habilidade"
+                                    prop:value=move || skill_name.get()
+                                    on:input=move |ev| skill_name.set(event_target_value(&ev))
+                                />
+                                <div class="skill-description-row">
+                                    <textarea
+                                        class="skill-input skill-description-input"
+                                        rows="3"
+                                        placeholder="Descrição"
+                                        prop:value=move || skill_description.get()
+                                        on:input=move |ev| skill_description.set(event_target_value(&ev))
+                                    ></textarea>
+                                </div>
+                            </Show>
+                        </div>
+                        <button type="button" class="skill-add" on:click=submit_skill>
+                            {move || if skill_form_open.get() { "Salvar" } else { "Adicionar" }}
+                        </button>
+                        <div class="skill-list">{render_skill_list}</div>
+                    </div>
+
                 </Show>
 
                 <Show when=move || tab.get() == 1>
