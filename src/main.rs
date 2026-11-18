@@ -948,33 +948,6 @@ fn SheetApp(
                     </div>
 
 
-                    <h3>"Habilidades"</h3>
-                    <div class="skill-field">
-                        <div class="skill-form">
-                            <Show when=move || skill_form_open.get()>
-                                <input
-                                    class="skill-input"
-                                    placeholder="Nome da habilidade"
-                                    prop:value=move || skill_name.get()
-                                    on:input=move |ev| skill_name.set(event_target_value(&ev))
-                                />
-                                <div class="skill-description-row">
-                                    <textarea
-                                        class="skill-input skill-description-input"
-                                        rows="3"
-                                        placeholder="Descrição"
-                                        prop:value=move || skill_description.get()
-                                        on:input=move |ev| skill_description.set(event_target_value(&ev))
-                                    ></textarea>
-                                </div>
-                            </Show>
-                        </div>
-                        <button type="button" class="skill-add" on:click=submit_skill>
-                            {move || if skill_form_open.get() { "Salvar" } else { "Adicionar" }}
-                        </button>
-                        <div class="skill-list">{render_skill_list}</div>
-                    </div>
-
                 </Show>
 
                 <Show when=move || tab.get() == 1>
