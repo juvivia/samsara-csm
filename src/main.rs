@@ -175,6 +175,14 @@ fn save_sheet(sheet: &Sheet) {
     }
 }
 
+fn load_color_theme() -> String {
+    web_sys::window()
+        .and_then(|w| w.local_storage().ok().flatten())
+        .and_then(|storage| storage.get_item("samsara-color-theme").ok().flatten())
+        .filter(|theme| matches!(theme.as_str(), "green" | "red" | "yellow" | "purple" | "mono"))
+        .unwrap_or_else(|| "green".to_string())
+}
+
 fn specialization_options_for_race(race: &str) -> Vec<&'static str> {
     match race {
         "Humano" => vec!["Amalgamos", "Flagelos", "Aplicadores", "Suplícios"],
@@ -303,6 +311,14 @@ fn SheetApp(
     let editing_skills = RwSignal::new(Vec::<String>::new());
     let portrait_url = RwSignal::new(None::<String>);
     let portrait_uploading = RwSignal::new(false);
+    let selected_theme = RwSignal::new(load_color_theme());
+    let theme_picker_open = RwSignal::new(false);
+
+    Effect::new(move |_| {
+        if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
+            let _ = storage.set_item("samsara-color-theme", &selected_theme.get());
+        }
+    });
 
     if let Some(path) = initial_portrait_path {
         let current_session = session.get();
@@ -742,7 +758,7 @@ fn SheetApp(
     };
 
     view! {
-        <main class="shell">
+        <main class="shell" attr:data-theme=move || selected_theme.get()>
             <header class="topbar">
                 <div>
                     <h1>"SAMSARA"</h1>
@@ -1022,6 +1038,47 @@ fn SheetApp(
                     <inventory::Inventory sheet=sheet />
                 </Show>
             </section>
+
+            <div class="theme-controls">
+                <Show when=move || theme_picker_open.get()>
+                    <section class="theme-picker" role="dialog" aria-label="Escolher tema de cores">
+                        <div class="theme-picker-heading">
+                            <span>"Paleta de cores"</span>
+                            <button type="button" class="theme-picker-close" aria-label="Fechar seletor de tema" on:click=move |_| theme_picker_open.set(false)>
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                            </button>
+                        </div>
+                        <div class="theme-options">
+                            <button type="button" class="theme-option" class:active=move || selected_theme.get() == "green" on:click=move |_| { selected_theme.set("green".to_string()); theme_picker_open.set(false); }>
+                                <span class="theme-swatch theme-swatch-green"></span><span>"Verde"</span>
+                                <Show when=move || selected_theme.get() == "green"><span class="theme-check">"✓"</span></Show>
+                            </button>
+                            <button type="button" class="theme-option" class:active=move || selected_theme.get() == "red" on:click=move |_| { selected_theme.set("red".to_string()); theme_picker_open.set(false); }>
+                                <span class="theme-swatch theme-swatch-red"></span><span>"Vermelho"</span>
+                                <Show when=move || selected_theme.get() == "red"><span class="theme-check">"✓"</span></Show>
+                            </button>
+                            <button type="button" class="theme-option" class:active=move || selected_theme.get() == "yellow" on:click=move |_| { selected_theme.set("yellow".to_string()); theme_picker_open.set(false); }>
+                                <span class="theme-swatch theme-swatch-yellow"></span><span>"Amarelo"</span>
+                                <Show when=move || selected_theme.get() == "yellow"><span class="theme-check">"✓"</span></Show>
+                            </button>
+                            <button type="button" class="theme-option" class:active=move || selected_theme.get() == "purple" on:click=move |_| { selected_theme.set("purple".to_string()); theme_picker_open.set(false); }>
+                                <span class="theme-swatch theme-swatch-purple"></span><span>"Roxo"</span>
+                                <Show when=move || selected_theme.get() == "purple"><span class="theme-check">"✓"</span></Show>
+                            </button>
+                            <button type="button" class="theme-option" class:active=move || selected_theme.get() == "mono" on:click=move |_| { selected_theme.set("mono".to_string()); theme_picker_open.set(false); }>
+                                <span class="theme-swatch theme-swatch-mono"></span><span>"Monocromático"</span>
+                                <Show when=move || selected_theme.get() == "mono"><span class="theme-check">"✓"</span></Show>
+                            </button>
+                        </div>
+                    </section>
+                </Show>
+                <button type="button" class="theme-toggle" aria-label="Personalizar tema de cores" title="Personalizar tema" on:click=move |_| theme_picker_open.update(|open| *open = !*open)>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M20.2 15.1A8.5 8.5 0 0 1 8.9 3.8 8.7 8.7 0 1 0 20.2 15.1Z"/>
+                        <path d="M16.5 3.5v3M15 5h3"/>
+                    </svg>
+                </button>
+            </div>
 
             <footer class="account-footer">
                 <div class="account-footer-actions">
