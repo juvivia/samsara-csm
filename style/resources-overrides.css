@@ -1093,7 +1093,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 
 /* Paletas selecionáveis do SAMSARA. */
-.shell[data-theme="green"] {
+.shell {
     --theme-c-e8e9e9: #e8e9e9;
     --theme-c-111418: #111418;
     --theme-c-8b949e: #8b949e;
@@ -1201,8 +1201,8 @@ input[type="number"]::-webkit-outer-spin-button {
     --theme-c-364148: #483736;
     --theme-c-30383e: #3e3030;
     --theme-c-9ba4ac: #ac9c9b;
-    --theme-c-b4d1c2: #d1b5b4;
-    --theme-c-e8f3ed: #f3e8e8;
+    --theme-c-b4d1c2: #e58a98;
+    --theme-c-e8f3ed: #ffe5e8;
     --theme-c-a8b1b8: #b8a9a8;
     --theme-c-1b2025: #251b1b;
     --theme-c-353f46: #463635;
@@ -1212,7 +1212,7 @@ input[type="number"]::-webkit-outer-spin-button {
     --theme-c-aeb9c1: #c1afae;
     --theme-c-364047: #473736;
     --theme-c-9faab2: #b2a09f;
-    --theme-c-c0d8c9: #d8c1c0;
+    --theme-c-c0d8c9: #f0a0aa;
     --theme-c-d6a9a9: #d6aba9;
     --theme-c-17251e: #251717;
     --theme-c-859098: #988685;
@@ -1301,8 +1301,8 @@ input[type="number"]::-webkit-outer-spin-button {
     --theme-c-364148: #484436;
     --theme-c-30383e: #3e3b30;
     --theme-c-9ba4ac: #aca89b;
-    --theme-c-b4d1c2: #d1cbb4;
-    --theme-c-e8f3ed: #f3f1e8;
+    --theme-c-b4d1c2: #e6c66c;
+    --theme-c-e8f3ed: #fff1c9;
     --theme-c-a8b1b8: #b8b5a8;
     --theme-c-1b2025: #25231b;
     --theme-c-353f46: #464235;
@@ -1312,7 +1312,7 @@ input[type="number"]::-webkit-outer-spin-button {
     --theme-c-aeb9c1: #c1bdae;
     --theme-c-364047: #474336;
     --theme-c-9faab2: #b2ae9f;
-    --theme-c-c0d8c9: #d8d3c0;
+    --theme-c-c0d8c9: #efd58d;
     --theme-c-d6a9a9: #d6cca9;
     --theme-c-17251e: #252217;
     --theme-c-859098: #989485;
@@ -1401,8 +1401,8 @@ input[type="number"]::-webkit-outer-spin-button {
     --theme-c-364148: #413648;
     --theme-c-30383e: #38303e;
     --theme-c-9ba4ac: #a59bac;
-    --theme-c-b4d1c2: #c5b4d1;
-    --theme-c-e8f3ed: #efe8f3;
+    --theme-c-b4d1c2: #c59be8;
+    --theme-c-e8f3ed: #f1e5ff;
     --theme-c-a8b1b8: #b2a8b8;
     --theme-c-1b2025: #211b25;
     --theme-c-353f46: #3f3546;
@@ -1412,7 +1412,7 @@ input[type="number"]::-webkit-outer-spin-button {
     --theme-c-aeb9c1: #b9aec1;
     --theme-c-364047: #403647;
     --theme-c-9faab2: #aa9fb2;
-    --theme-c-c0d8c9: #cec0d8;
+    --theme-c-c0d8c9: #d3b2ef;
     --theme-c-d6a9a9: #c4a9d6;
     --theme-c-17251e: #1f1725;
     --theme-c-859098: #908598;
@@ -1501,8 +1501,8 @@ input[type="number"]::-webkit-outer-spin-button {
     --theme-c-364148: #3f3f3f;
     --theme-c-30383e: #373737;
     --theme-c-9ba4ac: #a3a3a3;
-    --theme-c-b4d1c2: #c3c3c3;
-    --theme-c-e8f3ed: #eeeeee;
+    --theme-c-b4d1c2: #d0d0d0;
+    --theme-c-e8f3ed: #f2f2f2;
     --theme-c-a8b1b8: #b0b0b0;
     --theme-c-1b2025: #202020;
     --theme-c-353f46: #3e3e3e;
@@ -1512,7 +1512,7 @@ input[type="number"]::-webkit-outer-spin-button {
     --theme-c-aeb9c1: #b8b8b8;
     --theme-c-364047: #3f3f3f;
     --theme-c-9faab2: #a9a9a9;
-    --theme-c-c0d8c9: #cccccc;
+    --theme-c-c0d8c9: #e0e0e0;
     --theme-c-d6a9a9: #c0c0c0;
     --theme-c-17251e: #1e1e1e;
     --theme-c-859098: #8f8f8f;
