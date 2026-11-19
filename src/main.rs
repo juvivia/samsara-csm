@@ -314,6 +314,12 @@ fn SheetApp(
     let portrait_uploading = RwSignal::new(false);
     let selected_theme = RwSignal::new(load_color_theme(&character_id.get()));
     let theme_picker_open = RwSignal::new(false);
+    let is_master = session.get_untracked().user.id == cloud::MASTER_UID;
+    let viewing_as_master = RwSignal::new(false);
+    let master_characters = RwSignal::new(Vec::<(cloud::CloudCharacter, Option<String>)>::new());
+    let master_loading = RwSignal::new(false);
+    let master_error = RwSignal::new(String::new());
+    let master_delete_pending = RwSignal::new(String::new());
 
     Effect::new(move |_| {
         let storage_key = format!("samsara-color-theme-{}", character_id.get());
@@ -793,6 +799,34 @@ fn SheetApp(
                 <button class:active=move || tab.get() == 2 on:click=move |_| tab.set(2)>
                     "Anotações"
                 </button>
+                <Show when=move || is_master>
+                    <button class:active=move || tab.get() == 3 on:click=move |_| {
+                        viewing_as_master.set(false);
+                        tab.set(3);
+                        master_loading.set(true);
+                        master_error.set(String::new());
+                        let current_session = session.get();
+                        spawn_local(async move {
+                            match cloud::list_all_characters(&current_session).await {
+                                Ok(characters) => {
+                                    let mut cards = Vec::new();
+                                    for character in characters {
+                                        let portrait = match character.portrait_path.as_deref() {
+                                            Some(path) => cloud::portrait_signed_url(&current_session, path).await.ok(),
+                                            None => None,
+                                        };
+                                        cards.push((character, portrait));
+                                    }
+                                    master_characters.set(cards);
+                                }
+                                Err(error) => master_error.set(error),
+                            }
+                            master_loading.set(false);
+                        });
+                    }>
+                        "Mestre"
+                    </button>
+                </Show>
             </nav>
 
             <section class="content">
