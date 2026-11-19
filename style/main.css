@@ -493,3 +493,32 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
 @media (max-width: 350px) {
     .character-profile-layout { grid-template-columns: 96px minmax(0, 1fr); gap: 7px; }
 }
+
+
+/* Painel de gerenciamento da conta Mestre */
+.master-dashboard { display: flex; flex-direction: column; gap: 14px; }
+.master-dashboard > h2 { margin: 0; }
+.master-character-list { display: grid; gap: 12px; }
+.master-character-card {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    padding: 12px;
+    border: 1px solid var(--theme-c-364148);
+    border-radius: 9px;
+    background: var(--theme-c-171d21);
+}
+.master-character-portrait { width: 88px; height: 100px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 6px; background: var(--theme-c-252a2d); color: var(--theme-c-859098); font-size: 11px; }
+.master-character-portrait img { width: 100%; height: 100%; object-fit: cover; }
+.master-character-info { min-width: 0; }
+.master-character-info h3 { margin: 0 0 7px; overflow-wrap: anywhere; }
+.master-character-info p { margin: 0; color: var(--theme-c-b4d1c2); font-size: 13px; }
+.master-character-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+.master-character-actions button { padding: 8px 11px; cursor: pointer; }
+.master-character-actions .danger { border-color: #8b4545; color: #e69b9b; }
+@media (max-width: 600px) {
+    .master-character-card { grid-template-columns: 68px minmax(0, 1fr); gap: 10px; }
+    .master-character-portrait { width: 68px; height: 82px; }
+    .master-character-actions { grid-column: 1 / -1; justify-content: flex-start; }
+}
