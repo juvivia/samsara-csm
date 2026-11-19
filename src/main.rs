@@ -840,7 +840,7 @@ fn SheetApp(
                         <div class="master-character-list">
                             {move || master_characters.get().into_iter().map(|(character, portrait)| {
                                 let selected = character.clone();
-                                let delete_target = character.clone();
+                                let delete_target = StoredValue::new(character.clone());
                                 let card_id = character.id.clone();
                                 let values = &character.sheet_data;
                                 let pv = values.get("pv").and_then(|v| v.as_i64()).unwrap_or(0);
@@ -881,7 +881,7 @@ fn SheetApp(
                                             <Show when=move || master_delete_pending.get() == card_id>
                                                 <button type="button" class="danger" on:click=move |_| {
                                                     let auth_session = session.get();
-                                                    let target = delete_target.clone();
+                                                    let target = delete_target.get_value();
                                                     spawn_local(async move {
                                                         match cloud::delete_character_as_master(&auth_session, &target).await {
                                                             Ok(()) => {
