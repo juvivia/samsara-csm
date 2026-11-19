@@ -947,37 +947,6 @@ fn SheetApp(
                         <div class="stat"><strong>"HAB"</strong><input aria-label="Atributo HAB" type="number" disabled=move || !resource_editing.get() prop:value=move || sheet.get().stats[4].to_string() on:input=move |ev| { if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| s.stats[4] = v); } } /></div>
                     </div>
 
-
-                </Show>
-
-                <Show when=move || tab.get() == 1>
-                    <h3>"Habilidades"</h3>
-                    <div class="skill-field">
-                        <div class="skill-form">
-                            <Show when=move || skill_form_open.get()>
-                                <input
-                                    class="skill-input"
-                                    placeholder="Nome da habilidade"
-                                    prop:value=move || skill_name.get()
-                                    on:input=move |ev| skill_name.set(event_target_value(&ev))
-                                />
-                                <div class="skill-description-row">
-                                    <textarea
-                                        class="skill-input skill-description-input"
-                                        rows="3"
-                                        placeholder="Descrição"
-                                        prop:value=move || skill_description.get()
-                                        on:input=move |ev| skill_description.set(event_target_value(&ev))
-                                    ></textarea>
-                                </div>
-                            </Show>
-                        </div>
-                        <button type="button" class="skill-add" on:click=submit_skill>
-                            {move || if skill_form_open.get() { "Salvar" } else { "Adicionar" }}
-                        </button>
-                        <div class="skill-list">{render_skill_list}</div>
-                    </div>
-
                     <section class="test-advantages-section">
                         <h3>"Vantagens"</h3>
                         <p class="hint">"Defina quantas vantagens o personagem possui em cada tipo de teste. uma vantagem equivale a +1d4 no teste."</p>
@@ -1031,6 +1000,39 @@ fn SheetApp(
                             }}
                         </div>
                     </section>
+
+
+
+                </Show>
+
+                <Show when=move || tab.get() == 1>
+                    <h3>"Habilidades"</h3>
+                    <div class="skill-field">
+                        <div class="skill-form">
+                            <Show when=move || skill_form_open.get()>
+                                <input
+                                    class="skill-input"
+                                    placeholder="Nome da habilidade"
+                                    prop:value=move || skill_name.get()
+                                    on:input=move |ev| skill_name.set(event_target_value(&ev))
+                                />
+                                <div class="skill-description-row">
+                                    <textarea
+                                        class="skill-input skill-description-input"
+                                        rows="3"
+                                        placeholder="Descrição"
+                                        prop:value=move || skill_description.get()
+                                        on:input=move |ev| skill_description.set(event_target_value(&ev))
+                                    ></textarea>
+                                </div>
+                            </Show>
+                        </div>
+                        <button type="button" class="skill-add" on:click=submit_skill>
+                            {move || if skill_form_open.get() { "Salvar" } else { "Adicionar" }}
+                        </button>
+                        <div class="skill-list">{render_skill_list}</div>
+                    </div>
+
                 </Show>
 
                 <Show when=move || tab.get() == 2>
@@ -1090,7 +1092,7 @@ fn SheetApp(
 
             <footer class="account-footer">
                 <div class="account-footer-actions">
-                    <Show when=move || tab.get() == 1 && !resource_editing.get()>
+                    <Show when=move || tab.get() == 0 && !resource_editing.get()>
                         <button
                             type="button"
                             class="resource-edit"
