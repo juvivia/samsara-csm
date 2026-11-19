@@ -16,6 +16,100 @@ pub struct CloudCharacter {
     pub name: String,
     pub sheet_data: Value,
     pub portrait_path: Option<String>,
+    #[serde(default)]
+    pub user_id: String,
+}
+
+
+pub const MASTER_UID: &str = "ac5dd4c6-6aa7-47a6-8192-703b44ef3961";
+
+pub async fn list_all_characters(
+    session: &AuthSession,
+) -> Result<Vec<CloudCharacter>, String> {
+    if session.user.id != MASTER_UID {
+        return Err("Acesso restrito à conta Mestre.".into());
+    }
+
+    let url = format!(
+        "{}/rest/v1/characters?select=id,name,sheet_data,portrait_path,user_id&order=created_at.desc",
+        SUPABASE_URL
+    );
+    let response = Request::get(&url)
+        .header("apikey", SUPABASE_KEY)
+        .header("Authorization", &format!("Bearer {}", session.access_token))
+        .send().await.map_err(|e| e.to_string())?;
+
+    if !response.ok() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        return Err(format!("Erro ao listar fichas ({}): {}", status, body));
+    }
+    response.json().await.map_err(|e| e.to_string())
+}
+
+pub async fn update_character_as_master(
+    session: &AuthSession,
+    character_id: &str,
+    name: &str,
+    portrait_path: Option<&str>,
+    sheet_data: Value,
+) -> Result<(), String> {
+    if session.user.id != MASTER_UID {
+        return Err("Acesso restrito à conta Mestre.".into());
+    }
+    let body = serde_json::json!({
+        "name": name,
+        "sheet_data": sheet_data,
+        "portrait_path": portrait_path
+    });
+    let url = format!("{}/rest/v1/characters?id=eq.{}", SUPABASE_URL, character_id);
+    let response = Request::patch(&url)
+        .header("apikey", SUPABASE_KEY)
+        .header("Authorization", &format!("Bearer {}", session.access_token))
+        .header("Content-Type", "application/json")
+        .header("Prefer", "return=minimal")
+        .json(&body).map_err(|e| e.to_string())?
+        .send().await.map_err(|e| e.to_string())?;
+    if !response.ok() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        return Err(format!("Erro ao atualizar ficha como Mestre ({}): {}", status, body));
+    }
+    Ok(())
+}
+
+pub async fn delete_character_as_master(
+    session: &AuthSession,
+    character: &CloudCharacter,
+) -> Result<(), String> {
+    if session.user.id != MASTER_UID {
+        return Err("Acesso restrito à conta Mestre.".into());
+    }
+
+    if let Some(path) = character.portrait_path.as_deref() {
+        let url = format!("{}/storage/v1/object/{}/{}", SUPABASE_URL, PORTRAIT_BUCKET, path);
+        let response = Request::delete(&url)
+            .header("apikey", SUPABASE_KEY)
+            .header("Authorization", &format!("Bearer {}", session.access_token))
+            .send().await.map_err(|e| e.to_string())?;
+        if !response.ok() && response.status() != 404 {
+            let status = response.status();
+            let body = response.text().await.unwrap_or_default();
+            return Err(format!("Erro ao excluir retrato ({}): {}", status, body));
+        }
+    }
+
+    let url = format!("{}/rest/v1/characters?id=eq.{}", SUPABASE_URL, character.id);
+    let response = Request::delete(&url)
+        .header("apikey", SUPABASE_KEY)
+        .header("Authorization", &format!("Bearer {}", session.access_token))
+        .send().await.map_err(|e| e.to_string())?;
+    if !response.ok() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        return Err(format!("Erro ao excluir ficha: {}", body));
+    }
+    Ok(())
 }
 
 pub async fn load_character(
