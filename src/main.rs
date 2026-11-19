@@ -925,7 +925,7 @@ fn SheetApp(
                                     class="portrait-file-input"
                                     type="file"
                                     accept="image/jpeg,image/png,image/webp"
-                                    disabled=move || portrait_uploading.get()
+                                    disabled=move || portrait_uploading.get() || viewing_as_master.get()
                                     on:change=move |ev| {
                                         handle_portrait_change(
                                             ev,
