@@ -1008,52 +1008,49 @@ fn SheetApp(
                     </div>
                     <div class="resource-grid">
                         <div class="resource-card resource-pv">
-                            <strong>"VIDA"</strong>
+                            <strong>"PV"</strong>
                             <div class="resource-control">
                                 <button type="button" aria-label="Diminuir vida em 5" on:click=move |_| sheet.update(|s| s.pv = (s.pv - 5).max(0))>"≪"</button>
                                 <button type="button" aria-label="Diminuir vida em 1" on:click=move |_| sheet.update(|s| s.pv = (s.pv - 1).max(0))>"‹"</button>
                                 <div class="resource-meter">
                                     <div class="resource-meter-fill" style:width=move || { let s = sheet.get(); let max = if s.pv_max > 0 { s.pv_max } else { s.pv.max(1) }; format!("{}%", (s.pv.max(0).min(max) as f64 / max as f64 * 100.0)) }></div>
-                                    <span>{move || { let s = sheet.get(); let max = if s.pv_max > 0 { s.pv_max } else { s.pv }; format!("{} / {}", s.pv, max) }}</span>
+                                    <span class:resource-current-hidden=move || resource_editing.get()>{move || sheet.get().pv.to_string()}</span>
+                                    <span class:resource-max-hidden=move || resource_editing.get()>{move || { let s = sheet.get(); format!("/ {}", if s.pv_max > 0 { s.pv_max } else { s.pv }) }}</span>
+                                    <input class="resource-inline-max" type="number" min="0" aria-label="Máximo de vida" class:resource-inline-max-visible=move || resource_editing.get() prop:value=move || { let s = sheet.get(); if s.pv_max > 0 { s.pv_max } else { s.pv }.to_string() } on:input=move |ev| { if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| { s.pv_max = v.max(0); s.pv = s.pv.min(s.pv_max); }); } } />
                                 </div>
                                 <button type="button" aria-label="Aumentar vida em 1" on:click=move |_| sheet.update(|s| { let max = if s.pv_max > 0 { s.pv_max } else { i32::MAX }; s.pv = (s.pv + 1).min(max); })>"›"</button>
                                 <button type="button" aria-label="Aumentar vida em 5" on:click=move |_| sheet.update(|s| { let max = if s.pv_max > 0 { s.pv_max } else { i32::MAX }; s.pv = (s.pv + 5).min(max); })>"≫"</button>
                             </div>
-                            <Show when=move || resource_editing.get()>
-                                <input class="resource-max-input" type="number" min="0" aria-label="Máximo de vida" prop:value=move || { let s = sheet.get(); if s.pv_max > 0 { s.pv_max } else { s.pv }.to_string() } on:input=move |ev| { if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| { s.pv_max = v.max(0); s.pv = s.pv.min(s.pv_max); }); } } />
-                            </Show>
                         </div>
                         <div class="resource-card resource-san">
-                            <strong>"SANIDADE"</strong>
+                            <strong>"SAN"</strong>
                             <div class="resource-control">
                                 <button type="button" aria-label="Diminuir sanidade em 5" on:click=move |_| sheet.update(|s| s.san = (s.san - 5).max(0))>"≪"</button>
                                 <button type="button" aria-label="Diminuir sanidade em 1" on:click=move |_| sheet.update(|s| s.san = (s.san - 1).max(0))>"‹"</button>
                                 <div class="resource-meter">
                                     <div class="resource-meter-fill" style:width=move || { let s = sheet.get(); let max = if s.san_max > 0 { s.san_max } else { s.san.max(1) }; format!("{}%", (s.san.max(0).min(max) as f64 / max as f64 * 100.0)) }></div>
-                                    <span>{move || { let s = sheet.get(); let max = if s.san_max > 0 { s.san_max } else { s.san }; format!("{} / {}", s.san, max) }}</span>
+                                    <span class:resource-current-hidden=move || resource_editing.get()>{move || sheet.get().san.to_string()}</span>
+                                    <span class:resource-max-hidden=move || resource_editing.get()>{move || { let s = sheet.get(); format!("/ {}", if s.san_max > 0 { s.san_max } else { s.san }) }}</span>
+                                    <input class="resource-inline-max" type="number" min="0" aria-label="Máximo de sanidade" class:resource-inline-max-visible=move || resource_editing.get() prop:value=move || { let s = sheet.get(); if s.san_max > 0 { s.san_max } else { s.san }.to_string() } on:input=move |ev| { if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| { s.san_max = v.max(0); s.san = s.san.min(s.san_max); }); } } />
                                 </div>
                                 <button type="button" aria-label="Aumentar sanidade em 1" on:click=move |_| sheet.update(|s| { let max = if s.san_max > 0 { s.san_max } else { i32::MAX }; s.san = (s.san + 1).min(max); })>"›"</button>
                                 <button type="button" aria-label="Aumentar sanidade em 5" on:click=move |_| sheet.update(|s| { let max = if s.san_max > 0 { s.san_max } else { i32::MAX }; s.san = (s.san + 5).min(max); })>"≫"</button>
                             </div>
-                            <Show when=move || resource_editing.get()>
-                                <input class="resource-max-input" type="number" min="0" aria-label="Máximo de sanidade" prop:value=move || { let s = sheet.get(); if s.san_max > 0 { s.san_max } else { s.san }.to_string() } on:input=move |ev| { if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| { s.san_max = v.max(0); s.san = s.san.min(s.san_max); }); } } />
-                            </Show>
                         </div>
                         <div class="resource-card resource-pm">
-                            <strong>"ESFORÇO"</strong>
+                            <strong>"PM"</strong>
                             <div class="resource-control">
                                 <button type="button" aria-label="Diminuir esforço em 5" on:click=move |_| sheet.update(|s| s.pm = (s.pm - 5).max(0))>"≪"</button>
                                 <button type="button" aria-label="Diminuir esforço em 1" on:click=move |_| sheet.update(|s| s.pm = (s.pm - 1).max(0))>"‹"</button>
                                 <div class="resource-meter">
                                     <div class="resource-meter-fill" style:width=move || { let s = sheet.get(); let max = if s.pm_max > 0 { s.pm_max } else { s.pm.max(1) }; format!("{}%", (s.pm.max(0).min(max) as f64 / max as f64 * 100.0)) }></div>
-                                    <span>{move || { let s = sheet.get(); let max = if s.pm_max > 0 { s.pm_max } else { s.pm }; format!("{} / {}", s.pm, max) }}</span>
+                                    <span class:resource-current-hidden=move || resource_editing.get()>{move || sheet.get().pm.to_string()}</span>
+                                    <span class:resource-max-hidden=move || resource_editing.get()>{move || { let s = sheet.get(); format!("/ {}", if s.pm_max > 0 { s.pm_max } else { s.pm }) }}</span>
+                                    <input class="resource-inline-max" type="number" min="0" aria-label="Máximo de esforço" class:resource-inline-max-visible=move || resource_editing.get() prop:value=move || { let s = sheet.get(); if s.pm_max > 0 { s.pm_max } else { s.pm }.to_string() } on:input=move |ev| { if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| { s.pm_max = v.max(0); s.pm = s.pm.min(s.pm_max); }); } } />
                                 </div>
                                 <button type="button" aria-label="Aumentar esforço em 1" on:click=move |_| sheet.update(|s| { let max = if s.pm_max > 0 { s.pm_max } else { i32::MAX }; s.pm = (s.pm + 1).min(max); })>"›"</button>
                                 <button type="button" aria-label="Aumentar esforço em 5" on:click=move |_| sheet.update(|s| { let max = if s.pm_max > 0 { s.pm_max } else { i32::MAX }; s.pm = (s.pm + 5).min(max); })>"≫"</button>
                             </div>
-                            <Show when=move || resource_editing.get()>
-                                <input class="resource-max-input" type="number" min="0" aria-label="Máximo de esforço" prop:value=move || { let s = sheet.get(); if s.pm_max > 0 { s.pm_max } else { s.pm }.to_string() } on:input=move |ev| { if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| { s.pm_max = v.max(0); s.pm = s.pm.min(s.pm_max); }); } } />
-                            </Show>
                         </div>
                     </div>
 
