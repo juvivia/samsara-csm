@@ -842,6 +842,8 @@ fn SheetApp(
                                 let selected = character.clone();
                                 let delete_target = StoredValue::new(character.clone());
                                 let card_id = character.id.clone();
+                                let show_card_id = card_id.clone();
+                                let button_card_id = card_id.clone();
                                 let values = &character.sheet_data;
                                 let pv = values.get("pv").and_then(|v| v.as_i64()).unwrap_or(0);
                                 let san = values.get("san").and_then(|v| v.as_i64()).unwrap_or(0);
@@ -878,7 +880,7 @@ fn SheetApp(
                                                 }
                                                 save_status.set("Ficha aberta em modo Mestre.".to_string());
                                             }>"Abrir ficha"</button>
-                                            <Show when=move || master_delete_pending.get() == card_id>
+                                            <Show when=move || master_delete_pending.get() == show_card_id.clone()>
                                                 <button type="button" class="danger" on:click=move |_| {
                                                     let auth_session = session.get();
                                                     let target = delete_target.get_value();
@@ -893,7 +895,7 @@ fn SheetApp(
                                                     });
                                                 }>"Confirmar"</button>
                                             </Show>
-                                            <button type="button" class="danger" on:click=move |_| master_delete_pending.set(card_id.clone())>"Excluir"</button>
+                                            <button type="button" class="danger" on:click=move |_| master_delete_pending.set(button_card_id.clone())>"Excluir"</button>
                                         </div>
                                     </article>
                                 }
