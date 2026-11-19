@@ -1216,6 +1216,13 @@ fn SheetApp(
                         </button>
                     </Show>
 
+                    <Show when=move || viewing_as_master.get()>
+                        <button type="button" class="resource-edit" on:click=move |_| {
+                            viewing_as_master.set(false);
+                            tab.set(3);
+                            save_status.set("Retornou ao painel do Mestre.".to_string());
+                        }>"Voltar ao Mestre"</button>
+                    </Show>
                     <button
                         type="button"
                         class="resource-edit"
@@ -1232,7 +1239,11 @@ fn SheetApp(
                             saving.set(true);
                             save_status.set("Salvando...".to_string());
                             spawn_local(async move {
-                                let result = cloud::update_character(&current_session, &current_id, &name, current_sheet.portrait_path.as_deref(), data).await;
+                                let result = if viewing_as_master.get_untracked() {
+                                    cloud::update_character_as_master(&current_session, &current_id, &name, current_sheet.portrait_path.as_deref(), data).await
+                                } else {
+                                    cloud::update_character(&current_session, &current_id, &name, current_sheet.portrait_path.as_deref(), data).await
+                                };
                                 match result {
                                     Ok(()) => {
                                         save_status.set("Ficha salva na nuvem.".to_string());
