@@ -830,6 +830,77 @@ fn SheetApp(
             </nav>
 
             <section class="content">
+                <Show when=move || tab.get() == 3 && is_master>
+                    <section class="master-dashboard">
+                        <h2>"Painel do Mestre"</h2>
+                        <Show when=move || master_loading.get()><p>"Carregando fichas..."</p></Show>
+                        <Show when=move || !master_error.get().is_empty()>
+                            <p class="auth-error">{move || master_error.get()}</p>
+                        </Show>
+                        <div class="master-character-list">
+                            {move || master_characters.get().into_iter().map(|(character, portrait)| {
+                                let selected = character.clone();
+                                let delete_target = character.clone();
+                                let card_id = character.id.clone();
+                                let values = &character.sheet_data;
+                                let pv = values.get("pv").and_then(|v| v.as_i64()).unwrap_or(0);
+                                let san = values.get("san").and_then(|v| v.as_i64()).unwrap_or(0);
+                                let pm = values.get("pm").and_then(|v| v.as_i64()).unwrap_or(0);
+                                view! {
+                                    <article class="master-character-card">
+                                        <div class="master-character-portrait">
+                                            {if let Some(url) = portrait {
+                                                view! { <img src=url alt="Retrato do personagem"/> }.into_any()
+                                            } else {
+                                                view! { <span>"Sem retrato"</span> }.into_any()
+                                            }}
+                                        </div>
+                                        <div class="master-character-info">
+                                            <h3>{character.name.clone()}</h3>
+                                            <p>{format!("PV: {} • SAN: {} • PM: {}", pv, san, pm)}</p>
+                                        </div>
+                                        <div class="master-character-actions">
+                                            <button type="button" on:click=move |_| {
+                                                let current = selected.clone();
+                                                let loaded = serde_json::from_value::<Sheet>(current.sheet_data.clone()).unwrap_or_default();
+                                                sheet.set(loaded);
+                                                character_id.set(current.id.clone());
+                                                portrait_url.set(None);
+                                                viewing_as_master.set(true);
+                                                tab.set(0);
+                                                if let Some(path) = current.portrait_path.clone() {
+                                                    let auth_session = session.get();
+                                                    spawn_local(async move {
+                                                        if let Ok(url) = cloud::portrait_signed_url(&auth_session, &path).await {
+                                                            portrait_url.set(Some(url));
+                                                        }
+                                                    });
+                                                }
+                                                save_status.set("Ficha aberta em modo Mestre.".to_string());
+                                            }>"Abrir ficha"</button>
+                                            <Show when=move || master_delete_pending.get() == card_id>
+                                                <button type="button" class="danger" on:click=move |_| {
+                                                    let auth_session = session.get();
+                                                    let target = delete_target.clone();
+                                                    spawn_local(async move {
+                                                        match cloud::delete_character_as_master(&auth_session, &target).await {
+                                                            Ok(()) => {
+                                                                master_characters.update(|items| items.retain(|(item, _)| item.id != target.id));
+                                                                master_delete_pending.set(String::new());
+                                                            }
+                                                            Err(error) => master_error.set(error),
+                                                        }
+                                                    });
+                                                }>"Confirmar"</button>
+                                            </Show>
+                                            <button type="button" class="danger" on:click=move |_| master_delete_pending.set(card_id.clone())>"Excluir"</button>
+                                        </div>
+                                    </article>
+                                }
+                            }).collect_view()}
+                        </div>
+                    </section>
+                </Show>
                 <Show when=move || tab.get() == 0>
                     <div class="character-profile-layout">
                         <div class="portrait-card">
