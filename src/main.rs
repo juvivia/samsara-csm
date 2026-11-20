@@ -723,7 +723,11 @@ fn SheetApp(
                                                                             })
                                                                         >
                                                                             {if child_editing {
-                                                                                view! { <span>"Concluir"</span> }.into_any()
+                                                                                view! {
+                                                                                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                                                        <path d="m5 12 4 4L19 6"/>
+                                                                                    </svg>
+                                                                                }.into_any()
                                                                             } else {
                                                                                 view! {
                                                                                     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
