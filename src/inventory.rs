@@ -425,7 +425,7 @@ pub(crate) fn Inventory(sheet: RwSignal<crate::Sheet>) -> impl IntoView {
     view! {
         <section class="inventory-section">
             <div class="inventory-main">
-            <div class="section-heading"><h3>"Inventário"</h3></div>
+            <div class="section-heading"><h2>"Inventário"</h2></div>
             <p class="hint">
                 "Escolha o tamanho e clique em um espaço vazio para adicionar. Arraste um item ou toque nele e depois na célula de destino para movê-lo. O botão ↻ gira itens médios."
             </p>
