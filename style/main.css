@@ -621,6 +621,20 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
 
 
 /* Estado de alerta individual: só a barra com recurso baixo ganha intensidade. */
+/* Sobrelimite: mantém a cor do tema e destaca a barra com brilho. */
+.resource-control.resource-overflow {
+    border-color: var(--theme-c-b4d1c2);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--theme-c-b4d1c2) 55%, transparent),
+                0 0 12px color-mix(in srgb, var(--theme-c-b4d1c2) 48%, transparent);
+}
+.resource-control.resource-overflow .resource-meter-fill {
+    background: var(--theme-c-b4d1c2);
+    filter: brightness(1.65) saturate(1.35);
+    box-shadow: 0 0 9px var(--theme-c-b4d1c2), 0 0 18px var(--theme-c-b4d1c2);
+}
+.resource-control.resource-overflow > button {
+    color: var(--theme-c-b4d1c2);
+}
 .resource-control.resource-low {
     border-color: #ff3030;
     box-shadow: 0 0 0 1px rgba(255, 48, 48, .42),
