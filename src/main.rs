@@ -721,7 +721,18 @@ fn SheetApp(
                                                                                     names.push(child_name_for_edit.clone());
                                                                                 }
                                                                             })
-                                                                        >{if child_editing { "Concluir" } else { "Editar" }}</button>
+                                                                        >
+                                                                            {if child_editing {
+                                                                                view! { <span>"Concluir"</span> }.into_any()
+                                                                            } else {
+                                                                                view! {
+                                                                                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                                                        <path d="M12 20h9"/>
+                                                                                        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/>
+                                                                                    </svg>
+                                                                                }.into_any()
+                                                                            }}
+                                                                        </button>
                                                                     </div>
                                                                 </div>
                                                                 {if child_editing {
@@ -1057,7 +1068,7 @@ fn SheetApp(
                         </div>
                     </div>
 
-                    <h3>"Atributos"</h3>
+                    <h2>"Atributos"</h2>
                     <div class="stat-grid">
                         <div class="stat"><strong>"INT"</strong><input aria-label="Atributo INT" type="number" disabled=move || !resource_editing.get() prop:value=move || sheet.get().stats[0].to_string() on:input=move |ev| { if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| s.stats[0] = v); } } /></div>
                         <div class="stat"><strong>"FIS"</strong><input aria-label="Atributo FIS" type="number" disabled=move || !resource_editing.get() prop:value=move || sheet.get().stats[1].to_string() on:input=move |ev| { if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| s.stats[1] = v); } } /></div>
@@ -1067,7 +1078,7 @@ fn SheetApp(
                     </div>
 
                     <section class="test-advantages-section">
-                        <h3>"Vantagens"</h3>
+                        <h2>"Vantagens"</h2>
                         <p class="hint">"Defina quantas vantagens o personagem possui em cada tipo de teste. uma vantagem equivale a +1d4 no teste."</p>
                         <div class="test-advantages-grid">
                             {move || {
