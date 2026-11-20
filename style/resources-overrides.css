@@ -771,14 +771,14 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .skill-entry-heading {
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
+    align-items: center;
+    gap: 8px;
 }
 
 .skill-entry-actions {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+    flex-direction: row;
+    align-items: center;
     gap: 5px;
     margin-left: auto;
 }
@@ -829,7 +829,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .skill-edit-description {
     display: block;
-    margin-top: 8px;
+    margin-top: 4px;
     color: var(--theme-c-a4b0b6);
     font-size: 12px;
     line-height: 1.5;
@@ -1739,3 +1739,23 @@ input[type="number"]::-webkit-outer-spin-button {
 .theme-check { margin-left: auto; color: var(--theme-c-b4d1c2); font-size: 13px; }
 @keyframes theme-picker-appear { from { opacity: 0; transform: translateY(5px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (max-width: 540px) { .theme-controls { right: 14px; bottom: 14px; } .theme-toggle { width: 40px; height: 40px; } }
+
+
+/* Habilidades: aproximar título e descrição, como no cabeçalho compacto das pastas fechadas. */
+.skill-entry > .skill-entry-heading {
+    margin-bottom: 2px;
+}
+.skill-entry > p,
+.skill-folder-child > p {
+    margin-top: 2px;
+    margin-bottom: 0;
+    line-height: 1.4;
+}
+.skill-entry > .skill-edit-description,
+.skill-folder-child > .skill-edit-description {
+    margin-top: 4px;
+}
+.skill-entry-actions .skill-edit-button svg {
+    display: block;
+    transform: translateX(-1px);
+}
