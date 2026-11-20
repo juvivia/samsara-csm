@@ -1002,10 +1002,7 @@ fn SheetApp(
                         </div>
                     </div>
 
-                    <h2>"Atributos"</h2>
-                    <div class="resource-heading">
-                        <h3>"Recursos"</h3>
-                    </div>
+                    <h2>"Recursos"</h2>
                     <div class="resource-grid">
                         <div class="resource-card resource-pv">
                             <strong>"PV"</strong>
