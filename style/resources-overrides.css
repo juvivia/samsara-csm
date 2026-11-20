@@ -784,18 +784,32 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .skill-edit-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 27px;
+    height: 27px;
+    flex: 0 0 27px;
     padding: 0;
-    border: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
     background: transparent;
-    color: var(--theme-c-9dbba8);
+    color: var(--theme-c-aab6b1);
     font: inherit;
-    font-size: 12px;
     cursor: pointer;
+    transition: color .15s ease, background .15s ease, border-color .15s ease;
 }
 
 .skill-edit-button:hover {
-    color: var(--theme-c-d5e7da);
-    text-decoration: underline;
+    background: var(--theme-c-26312d);
+    border-color: var(--theme-c-3b4b44);
+    color: var(--theme-c-e5eee8);
+    text-decoration: none;
+}
+
+.skill-edit-button svg {
+    display: block;
+    transform: translateX(-1px);
 }
 
 .skill-edit-name,
