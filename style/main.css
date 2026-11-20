@@ -353,7 +353,12 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     font-weight: 600;
 }
 
-.resource-card strong { margin-left: 4px; }
+.resource-card strong {
+    display: block;
+    width: 100%;
+    margin: 0;
+    text-align: center;
+}
 
 .resource-control {
     display: flex;
@@ -389,8 +394,8 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     flex: 1 1 auto;
     align-self: stretch;
     min-width: 0;
-    overflow: hidden;
-    border-radius: 999px;
+    overflow: visible;
+    border-radius: 0;
     color: var(--theme-c-f2f3f3);
     font-size: 15px;
     font-weight: 500;
@@ -422,8 +427,10 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     background: rgba(0,0,0,.35);
     color: white;
     text-align: center;
-    font: inherit;
-    font-size: 14px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: inherit;
     height: 25px;
     line-height: 1;
 }
