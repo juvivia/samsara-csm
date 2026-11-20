@@ -824,7 +824,7 @@ fn SheetApp(
                     "Personagem"
                 </button>
                 <button class:active=move || tab.get() == 1 on:click=move |_| tab.set(1)>
-                    "Atributos"
+                    "Habilidades"
                 </button>
                 <button class:active=move || tab.get() == 2 on:click=move |_| tab.set(2)>
                     "Anotações"
@@ -1155,7 +1155,7 @@ fn SheetApp(
                 </Show>
 
                 <Show when=move || tab.get() == 1>
-                    <h3>"Habilidades"</h3>
+                    <h2>"Habilidades"</h2>
                     <div class="skill-field">
                         <div class="skill-form">
                             <Show when=move || skill_form_open.get()>
@@ -1181,6 +1181,13 @@ fn SheetApp(
                         </button>
                         <div class="skill-list">{render_skill_list}</div>
                     </div>
+
+                    <section class="conditions-section">
+                        <h2>"Condições"</h2>
+                        <div class="conditions-field" aria-label="Campo reservado para condições">
+                            <p>"As condições serão configuradas posteriormente."</p>
+                        </div>
+                    </section>
 
                 </Show>
 
