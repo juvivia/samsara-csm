@@ -506,7 +506,22 @@ fn SheetApp(
                                                         names.push(entry_name_for_edit.clone());
                                                     }
                                                 })
-                                            >{if is_editing { "Concluir" } else { "Editar" }}</button>
+                                            >
+                                                {if is_editing {
+                                                    view! {
+                                                        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                            <path d="m5 12 4 4L19 6"/>
+                                                        </svg>
+                                                    }.into_any()
+                                                } else {
+                                                    view! {
+                                                        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                            <path d="M12 20h9"/>
+                                                            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/>
+                                                        </svg>
+                                                    }.into_any()
+                                                }}
+                                            </button>
                                         </div>
                                     </div>
                                     {if is_editing {
