@@ -361,9 +361,11 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     gap: 5px;
     min-width: 0;
     min-height: 38px;
-    padding: 0 5px;
-    background: #111;
-    border: 1px solid #777;
+    padding: 0 7px;
+    background: var(--theme-c-171d21);
+    border: 1px solid var(--theme-c-536b60);
+    border-radius: 999px;
+    overflow: hidden;
 }
 
 .resource-control > button {
@@ -371,13 +373,13 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     padding: 4px 0;
     border: 0;
     background: transparent;
-    color: #f5f5f5;
+    color: var(--theme-c-b4d1c2);
     font-size: 20px;
     line-height: 1;
     cursor: pointer;
 }
 
-.resource-control > button:hover { color: white; transform: scale(1.12); }
+.resource-control > button:hover { color: var(--theme-c-e8f3ed); transform: scale(1.12); }
 
 .resource-meter {
     position: relative;
@@ -388,7 +390,8 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     align-self: stretch;
     min-width: 0;
     overflow: hidden;
-    color: white;
+    border-radius: 999px;
+    color: var(--theme-c-f2f3f3);
     font-size: 15px;
     font-weight: 500;
 }
@@ -398,7 +401,8 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     inset: 0 auto 0 0;
     max-width: 100%;
     transition: width 160ms ease;
-    opacity: .85;
+    opacity: .9;
+    border-radius: 999px;
 }
 
 .resource-meter span { position: relative; z-index: 1; text-shadow: 0 1px 2px #000; }
@@ -422,9 +426,11 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
 }
 
 .resource-inline-max-visible { display: block; }
-.resource-pv .resource-meter-fill { background: #6b1d1d; }
-.resource-san .resource-meter-fill { background: #8d22d8; }
-.resource-pm .resource-meter-fill { background: #c56a00; }
+.resource-pv .resource-meter-fill,
+.resource-san .resource-meter-fill,
+.resource-pm .resource-meter-fill {
+    background: var(--theme-c-b4d1c2);
+}
 
 .resource-max-label {
     color: var(--theme-c-859098);
