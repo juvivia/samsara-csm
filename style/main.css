@@ -687,3 +687,23 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     justify-content: center;
     text-align: center;
 }
+
+
+/* Logo principal do SAMSARA */
+.site-logo {
+    display: block;
+    width: min(220px, 100%);
+    height: auto;
+    object-fit: contain;
+}
+.topbar .site-logo {
+    width: 210px;
+}
+.auth-card .site-logo {
+    width: min(280px, 100%);
+    margin: 0 auto;
+}
+@media (max-width: 540px) {
+    .topbar .site-logo { width: 170px; }
+    .auth-card .site-logo { width: min(250px, 100%); }
+}

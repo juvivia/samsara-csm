@@ -799,7 +799,7 @@ fn SheetApp(
         <main class="shell" data-theme=move || selected_theme.get()>
             <header class="topbar">
                 <div>
-                    <h1>"SAMSARA"</h1>
+                    <img class="site-logo" src="logo.png" alt="SAMSARA" />
                     <p>"Character Sheet Manager"</p>
                 </div>
                 <label class="level level-control">
@@ -1406,7 +1406,7 @@ fn App() -> impl IntoView {
                 None => view! {
                     <main class="auth-screen">
                         <section class="auth-card">
-                            <h1>"SAMSARA"</h1>
+                            <img class="site-logo auth-logo" src="logo.png" alt="SAMSARA" />
                             <p>"Character Sheet Manager"</p>
                             <h2>{move || if register_mode.get() { "Criar conta" } else { "Entrar" }}</h2>
                             <label>
