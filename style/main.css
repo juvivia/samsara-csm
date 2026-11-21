@@ -70,18 +70,54 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     margin-bottom: 12px;
 }
 
-.conditions-field {
-    min-height: 76px;
-    padding: 14px;
+.conditions-list {
+    display: grid;
+    gap: 8px;
+}
+
+.condition-entry {
+    overflow: hidden;
     border: 1px solid var(--theme-c-364148);
     border-radius: 8px;
     background: var(--theme-c-171d21);
 }
 
-.conditions-field p {
+.condition-entry summary {
+    position: relative;
+    padding: 13px 40px 13px 14px;
+    color: var(--theme-c-e8eeee);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.condition-entry summary::-webkit-details-marker {
+    display: none;
+}
+
+.condition-entry summary::after {
+    content: "+";
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--theme-c-b4d1c2);
+    font-size: 18px;
+    font-weight: 400;
+}
+
+.condition-entry[open] summary::after {
+    content: "−";
+}
+
+.condition-entry p {
     margin: 0;
+    padding: 0 14px 14px;
     color: var(--theme-c-859098);
     font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
 }
 
 .skill-input-row {
