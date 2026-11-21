@@ -1184,8 +1184,23 @@ fn SheetApp(
 
                     <section class="conditions-section">
                         <h2>"Condições"</h2>
-                        <div class="conditions-field" aria-label="Campo reservado para condições">
-                            <p>"As condições serão configuradas posteriormente."</p>
+                        <div class="conditions-list" aria-label="Glossário de condições">
+                            <details class="condition-entry">
+                                <summary>"Enjoado"</summary>
+                                <p>"Seu personagem pode realizar apenas uma destas opções por turno: uma ação padrão ou uma ação de movimento. Não pode realizar ambas no mesmo turno."</p>
+                            </details>
+                            <details class="condition-entry">
+                                <summary>"Silenciado"</summary>
+                                <p>"Seu personagem não poderá realizar nenhuma ação que envolva custo de PM."</p>
+                            </details>
+                            <details class="condition-entry">
+                                <summary>"Atordoado"</summary>
+                                <p>"Seu personagem poderá realizar apenas ações de movimento, com metade da distância comum."</p>
+                            </details>
+                            <details class="condition-entry">
+                                <summary>"Esfolado"</summary>
+                                <p>"Toda vez que realizar um ataque, seu personagem deverá fazer um teste de Resistir, com DT definida pelo mestre. Se passar, realiza o ataque normalmente. Se falhar, fica desmaiado por 1d4 rodadas."</p>
+                            </details>
                         </div>
                     </section>
 
