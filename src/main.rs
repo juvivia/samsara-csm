@@ -1365,7 +1365,7 @@ fn SheetApp(
                                                         } else {
                                                             view! {
                                                                 <div class="turn-condition-list">
-                                                                    {assigned_conditions.into_iter().map(|condition| {
+                                                                    {assigned_conditions.clone().into_iter().map(|condition| {
                                                                         let remove_id = condition_id.clone();
                                                                         let remove_name = condition.name.clone();
                                                                         view! {
