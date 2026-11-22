@@ -1285,7 +1285,7 @@ fn SheetApp(
                                     let show_details_id = id.clone();
                                     let notes_id = id.clone();
                                     let condition_id = id.clone();
-                                    let is_current = index == state.current_index;
+                                    let is_current = index == current_index;
                                     view! {
                                         <li class:current-turn=is_current draggable="true"
                                             on:dragstart=move |ev: web_sys::DragEvent| {
@@ -1392,7 +1392,7 @@ fn SheetApp(
                                             </Show>
                                         </li>
                                     }
-                                }).collect_view()).unwrap_or_default()})}
+                                }).collect_view() }).unwrap_or_default()}
                             </ol>
                             <div class="combat-actions">
                                 <button type="button" class="resource-edit" on:click=move |_| {
