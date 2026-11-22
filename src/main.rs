@@ -371,13 +371,15 @@ fn SheetApp(
     let turn_popup_participant = RwSignal::new(None::<cloud::CombatParticipant>);
     let expanded_turn_player = RwSignal::new(String::new());
     let conditions_library = RwSignal::new(default_conditions());
-    let master_info_notes = RwSignal::new(web_sys::window().and_then(|w| w.local_storage().ok().flatten()).and_then(|storage| storage.get_item("samsara-master-info-notes").ok().flatten()).unwrap_or_default());
+    let master_info_notes = RwSignal::new(String::new());
     let combat_cards = RwSignal::new(Vec::<cloud::CombatSheetCard>::new());
     let combat_card_name = RwSignal::new(String::new());
     let combat_card_pv = RwSignal::new(10i32);
+    let combat_card_pv_max = RwSignal::new(10i32);
     let combat_card_pm = RwSignal::new(5i32);
+    let combat_card_pm_max = RwSignal::new(5i32);
     let combat_card_stats = RwSignal::new([0i32; 5]);
-    let editing_combat_card = RwSignal::new(None::<cloud::CombatSheetCard>);
+    let combat_card_form_open = RwSignal::new(false);
     let combat_cards_loading = RwSignal::new(false);
     let combat_cards_error = RwSignal::new(String::new());
     let combat_cards_saving = RwSignal::new(false);
@@ -410,6 +412,43 @@ fn SheetApp(
                 Err(error) => combat_cards_error.set(error),
             }
             combat_cards_loading.set(false);
+        });
+    };
+    let load_master_notes = move || {
+        let current_session = session.get();
+        spawn_local(async move {
+            match cloud::load_master_notes(&current_session).await {
+                Ok(notes) => master_info_notes.set(notes),
+                Err(error) => combat_cards_error.set(error),
+            }
+        });
+    };
+    let save_master_workspace = move || {
+        combat_cards_saving.set(true);
+        combat_cards_error.set(String::new());
+        let current_session = session.get();
+        let notes = master_info_notes.get();
+        let cards = combat_cards.get();
+        spawn_local(async move {
+            let result = async {
+                cloud::save_master_notes(&current_session, &notes).await?;
+                for card in cards {
+                    if card.id.is_empty() {
+                        let saved = cloud::create_combat_card(&current_session, &card).await?;
+                        combat_cards.update(|items| {
+                            if let Some(item) = items.iter_mut().find(|item| item.id.is_empty() && item.name == card.name) { *item = saved; }
+                        });
+                    } else {
+                        cloud::update_combat_card(&current_session, &card).await?;
+                    }
+                }
+                Ok::<(), String>(())
+            }.await;
+            match result {
+                Ok(()) => save_status.set("Informações e fichas de combate salvas no Supabase.".to_string()),
+                Err(error) => combat_cards_error.set(error),
+            }
+            combat_cards_saving.set(false);
         });
     };
 
@@ -1115,7 +1154,7 @@ fn SheetApp(
                             }
                         });
                     }>"Turnos"</button>
-                    <button class:active=move || tab.get() == 5 on:click=move |_| tab.set(5)>"Info"</button>
+                    <button class:active=move || tab.get() == 5 on:click=move |_| { tab.set(5); load_master_notes(); }>"Info"</button>
                     <button class:active=move || tab.get() == 6 on:click=move |_| { tab.set(6); load_combat_cards(); }>"Combate"</button>
                 </Show>
             </nav>
