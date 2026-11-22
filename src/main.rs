@@ -418,7 +418,14 @@ fn SheetApp(
         let current_session = session.get();
         spawn_local(async move {
             match cloud::load_master_notes(&current_session).await {
-                Ok(notes) => master_info_notes.set(notes),
+                Ok(notes) => {
+                    if notes.is_empty() {
+                        let fallback = web_sys::window().and_then(|w| w.local_storage().ok().flatten())
+                            .and_then(|storage| storage.get_item("samsara-master-info-notes").ok().flatten())
+                            .unwrap_or_default();
+                        master_info_notes.set(fallback);
+                    } else { master_info_notes.set(notes); }
+                },
                 Err(error) => combat_cards_error.set(error),
             }
         });
@@ -1586,32 +1593,7 @@ fn SheetApp(
                                             on:input=move |ev| if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_card_stats.update(|stats| stats[index]=v); } /></label>
                                     }).collect_view()}
                                 </div>
-                                <div class="combat-card-resources">
-                                    <label>"PV atual"<input type="number" min="0" prop:value=move || combat_card_pv.get().to_string() on:input=move |ev| if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_card_pv.set(v.max(0)); } /></label>
-                                    <label>"PV máximo"<input type="number" min="0" prop:value=move || combat_card_pv_max.get().to_string() on:input=move |ev| if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_card_pv_max.set(v.max(0)); } /></label>
-                                    <label>"PM atual"<input type="number" min="0" prop:value=move || combat_card_pm.get().to_string() on:input=move |ev| if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_card_pm.set(v.max(0)); } /></label>
-                                    <label>"PM máximo"<input type="number" min="0" prop:value=move || combat_card_pm_max.get().to_string() on:input=move |ev| if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_card_pm_max.set(v.max(0)); } /></label>
-                                </div>
-                                <button type="submit">"Criar ficha"</button>
-                            </form>
-                        </Show>
-                        <Show when=move || !combat_cards_error.get().is_empty()><p class="auth-error">{move || combat_cards_error.get()}</p></Show>
-                        <Show when=move || combat_cards_loading.get()><p>"Carregando fichas..."</p></Show>
-                        <div class="combat-cards-grid">
-                            {move || combat_cards.get().into_iter().enumerate().map(|(idx,card)| {
-                                let remove_id=card.id.clone();
-                                view! {
-                                    <article class="combat-mini-card">
-                                        <input class="combat-card-title-input" aria-label="Nome da ficha" prop:value=card.name.clone()
-                                            on:input=move |ev| { let value=event_target_value(&ev); combat_cards.update(|items| if let Some(item)=items.get_mut(idx) { item.name=value; }); } />
-                                        <div class="combat-mini-stats">
-                                            {["INT","FIS","DOM","VEL","HAB"].into_iter().enumerate().map(move |(stat_idx,label)| view! {
-                                                <label><strong>{label}</strong><input type="number" aria-label=label
-                                                    prop:value=move || combat_cards.get().get(idx).map(|c| c.stats[stat_idx].to_string()).unwrap_or_default()
-                                                    on:input=move |ev| if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.stats[stat_idx]=v; }); } /></label>
-                                            }).collect_view()}
-                                        </div>
-                                        <div class="combat-resource-edit">
+                                       <div class="combat-resource-edit">
                                             <strong>"PV"</strong>
                                             <div class="resource-control" class:resource-low=move || combat_cards.get().get(idx).map(|c| c.pv_max>0 && c.pv<=c.pv_max/4).unwrap_or(false)>
                                                 <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pv=(c.pv-5).max(0); })>"≪"</button>
