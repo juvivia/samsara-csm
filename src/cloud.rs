@@ -24,6 +24,13 @@ pub struct CloudCharacter {
 
 /// Participante de um combate compartilhado.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CombatCondition {
+    pub name: String,
+    pub description: String,
+}
+
+/// Participante de um combate compartilhado.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct CombatParticipant {
     pub character_id: String,
     pub name: String,
@@ -34,6 +41,8 @@ pub struct CombatParticipant {
     pub condition_name: String,
     #[serde(default)]
     pub condition_description: String,
+    #[serde(default)]
+    pub conditions: Vec<CombatCondition>,
 }
 
 /// Estado único do combate ativo da campanha.
