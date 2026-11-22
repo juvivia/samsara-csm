@@ -21,6 +21,72 @@ pub struct CloudCharacter {
 }
 
 
+
+/// Participante de um combate compartilhado.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CombatParticipant {
+    pub character_id: String,
+    pub name: String,
+    pub user_id: String,
+}
+
+/// Estado único do combate ativo da campanha.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CombatState {
+    pub id: i32,
+    pub is_active: bool,
+    pub participant_user_ids: Vec<String>,
+    pub turn_order: Vec<CombatParticipant>,
+    pub current_index: usize,
+    pub round: u32,
+}
+
+pub async fn load_combat_state(session: &AuthSession) -> Result<Option<CombatState>, String> {
+    let url = format!(
+        "{}/rest/v1/samsara_combat_state?select=id,is_active,participant_user_ids,turn_order,current_index,round&id=eq.1",
+        SUPABASE_URL
+    );
+    let response = Request::get(&url)
+        .header("apikey", SUPABASE_KEY)
+        .header("Authorization", &format!("Bearer {}", session.access_token))
+        .send().await.map_err(|e| e.to_string())?;
+    if !response.ok() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        return Err(format!("Erro ao consultar combate ({}): {}", status, body));
+    }
+    let rows: Vec<CombatState> = response.json().await.map_err(|e| e.to_string())?;
+    Ok(rows.into_iter().next())
+}
+
+pub async fn save_combat_state(session: &AuthSession, state: &CombatState) -> Result<(), String> {
+    if session.user.id != MASTER_UID {
+        return Err("Apenas a conta Mestre pode controlar os turnos.".into());
+    }
+    let body = serde_json::json!({
+        "id": 1,
+        "is_active": state.is_active,
+        "participant_user_ids": state.participant_user_ids,
+        "turn_order": state.turn_order,
+        "current_index": state.current_index,
+        "round": state.round,
+    });
+    let url = format!("{}/rest/v1/samsara_combat_state?on_conflict=id", SUPABASE_URL);
+    let response = Request::post(&url)
+        .header("apikey", SUPABASE_KEY)
+        .header("Authorization", &format!("Bearer {}", session.access_token))
+        .header("Content-Type", "application/json")
+        .header("Prefer", "resolution=merge-duplicates,return=minimal")
+        .json(&body).map_err(|e| e.to_string())?
+        .send().await.map_err(|e| e.to_string())?;
+    if !response.ok() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        return Err(format!("Erro ao salvar combate ({}): {}", status, body));
+    }
+    Ok(())
+}
+
 pub const MASTER_UID: &str = "ac5dd4c6-6aa7-47a6-8192-703b44ef3961";
 
 pub async fn list_all_characters(
