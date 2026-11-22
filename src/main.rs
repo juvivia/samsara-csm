@@ -1563,97 +1563,105 @@ fn SheetApp(
                 <Show when=move || tab.get() == 6 && master_mode.get() && is_master>
                     <section class="master-combat-sheets">
                         <h2>"Combate"</h2>
-                        <p class="hint">"Crie fichas auxiliares para acompanhar criaturas, aliados ou inimigos durante os encontros."</p>
-                        <form class="combat-card-editor" on:submit=move |ev| {
-                            ev.prevent_default();
-                            let name = combat_card_name.get().trim().to_string();
-                            if name.is_empty() { combat_cards_error.set("Informe um nome para a ficha.".to_string()); return; }
-                            let card = cloud::CombatSheetCard {
-                                id: editing_combat_card.get_untracked().map(|item| item.id).unwrap_or_default(),
-                                name, stats: combat_card_stats.get(), pv: combat_card_pv.get(), pm: combat_card_pm.get(),
-                            };
-                            let current_session = session.get();
-                            combat_cards_saving.set(true);
-                            combat_cards_error.set(String::new());
-                            spawn_local(async move {
-                                let result = if card.id.is_empty() {
-                                    cloud::create_combat_card(&current_session, &card).await
-                                } else {
-                                    cloud::update_combat_card(&current_session, &card).await.map(|_| card.clone())
-                                };
-                                match result {
-                                    Ok(saved) => {
-                                        combat_cards.update(|items| {
-                                            if let Some(index) = items.iter().position(|item| item.id == saved.id) { items[index] = saved; }
-                                            else { items.push(saved); }
-                                        });
-                                        editing_combat_card.set(None);
-                                        combat_card_name.set(String::new());
-                                        combat_card_pv.set(10);
-                                        combat_card_pm.set(5);
-                                        combat_card_stats.set([0; 5]);
-                                    }
-                                    Err(error) => combat_cards_error.set(error),
-                                }
-                                combat_cards_saving.set(false);
-                            });
-                        }>
-                            <h3>{move || if editing_combat_card.get().is_some() { "Editar ficha" } else { "Nova ficha" }}</h3>
-                            <label>"Nome"<input required placeholder="Nome da criatura ou personagem" prop:value=move || combat_card_name.get() on:input=move |ev| combat_card_name.set(event_target_value(&ev)) /></label>
-                            <div class="combat-card-stats">
-                                {["INT","FIS","DOM","VEL","HAB"].into_iter().enumerate().map(|(index, label)| view! {
-                                    <label>{label}<input type="number" prop:value=move || combat_card_stats.get()[index].to_string()
-                                        on:input=move |ev| { if let Ok(value)=event_target_value(&ev).parse::<i32>() { combat_card_stats.update(|stats| stats[index]=value); } } /></label>
-                                }).collect_view()}
-                            </div>
-                            <div class="combat-card-resources">
-                                <label>"PV"<input type="number" min="0" prop:value=move || combat_card_pv.get().to_string() on:input=move |ev| { if let Ok(value)=event_target_value(&ev).parse::<i32>() { combat_card_pv.set(value.max(0)); } } /></label>
-                                <label>"PM"<input type="number" min="0" prop:value=move || combat_card_pm.get().to_string() on:input=move |ev| { if let Ok(value)=event_target_value(&ev).parse::<i32>() { combat_card_pm.set(value.max(0)); } } /></label>
-                            </div>
-                            <div class="combat-actions">
-                                <button type="submit" disabled=move || combat_cards_saving.get()>{move || if combat_cards_saving.get() { "Salvando..." } else if editing_combat_card.get().is_some() { "Salvar edição" } else { "Salvar ficha" }}</button>
-                                <Show when=move || editing_combat_card.get().is_some()>
-                                    <button type="button" class="danger" on:click=move |_| {
-                                        editing_combat_card.set(None); combat_card_name.set(String::new());
-                                        combat_card_pv.set(10); combat_card_pm.set(5); combat_card_stats.set([0;5]);
-                                    }>"Cancelar"</button>
-                                </Show>
-                            </div>
-                        </form>
+                        <button type="button" class="resource-edit combat-add-button" on:click=move |_| {
+                            combat_card_form_open.update(|open| *open = !*open);
+                            combat_card_name.set(String::new()); combat_card_stats.set([0;5]);
+                            combat_card_pv.set(10); combat_card_pv_max.set(10);
+                            combat_card_pm.set(5); combat_card_pm_max.set(5);
+                        }>{move || if combat_card_form_open.get() { "Cancelar" } else { "Adicionar" }}</button>
+                        <Show when=move || combat_card_form_open.get()>
+                            <form class="combat-card-editor" on:submit=move |ev| {
+                                ev.prevent_default();
+                                let name=combat_card_name.get().trim().to_string();
+                                if name.is_empty() { combat_cards_error.set("Informe um nome para a ficha.".into()); return; }
+                                combat_cards.update(|items| items.push(cloud::CombatSheetCard {
+                                    id:String::new(), name, stats:combat_card_stats.get(),
+                                    pv:combat_card_pv.get(), pv_max:combat_card_pv_max.get(),
+                                    pm:combat_card_pm.get(), pm_max:combat_card_pm_max.get(),
+                                }));
+                                combat_card_form_open.set(false); combat_cards_error.set(String::new());
+                            }>
+                                <h3>"Nova ficha"</h3>
+                                <label>"Nome"<input required placeholder="Nome da criatura ou personagem" prop:value=move || combat_card_name.get() on:input=move |ev| combat_card_name.set(event_target_value(&ev)) /></label>
+                                <div class="combat-card-stats">
+                                    {["INT","FIS","DOM","VEL","HAB"].into_iter().enumerate().map(|(index,label)| view! {
+                                        <label>{label}<input type="number" prop:value=move || combat_card_stats.get()[index].to_string()
+                                            on:input=move |ev| if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_card_stats.update(|stats| stats[index]=v); } /></label>
+                                    }).collect_view()}
+                                </div>
+                                <div class="combat-card-resources">
+                                    <label>"PV atual"<input type="number" min="0" prop:value=move || combat_card_pv.get().to_string() on:input=move |ev| if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_card_pv.set(v.max(0)); } /></label>
+                                    <label>"PV máximo"<input type="number" min="0" prop:value=move || combat_card_pv_max.get().to_string() on:input=move |ev| if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_card_pv_max.set(v.max(0)); } /></label>
+                                    <label>"PM atual"<input type="number" min="0" prop:value=move || combat_card_pm.get().to_string() on:input=move |ev| if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_card_pm.set(v.max(0)); } /></label>
+                                    <label>"PM máximo"<input type="number" min="0" prop:value=move || combat_card_pm_max.get().to_string() on:input=move |ev| if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_card_pm_max.set(v.max(0)); } /></label>
+                                </div>
+                                <button type="submit">"Criar ficha"</button>
+                            </form>
+                        </Show>
                         <Show when=move || !combat_cards_error.get().is_empty()><p class="auth-error">{move || combat_cards_error.get()}</p></Show>
                         <Show when=move || combat_cards_loading.get()><p>"Carregando fichas..."</p></Show>
                         <div class="combat-cards-grid">
-                            {move || combat_cards.get().into_iter().map(|card| {
-                                let edit_card=card.clone();
-                                let delete_id=card.id.clone();
+                            {move || combat_cards.get().into_iter().enumerate().map(|(idx,card)| {
+                                let remove_id=card.id.clone();
                                 view! {
                                     <article class="combat-mini-card">
-                                        <h3>{card.name.clone()}</h3>
+                                        <input class="combat-card-title-input" aria-label="Nome da ficha" prop:value=card.name.clone()
+                                            on:input=move |ev| { let value=event_target_value(&ev); combat_cards.update(|items| if let Some(item)=items.get_mut(idx) { item.name=value; }); } />
                                         <div class="combat-mini-stats">
-                                            {["INT","FIS","DOM","VEL","HAB"].into_iter().zip(card.stats.iter().copied()).map(|(label,value)| view! { <span><strong>{label}</strong>{value}</span> }).collect_view()}
+                                            {["INT","FIS","DOM","VEL","HAB"].into_iter().enumerate().map(move |(stat_idx,label)| view! {
+                                                <label><strong>{label}</strong><input type="number" aria-label=label
+                                                    prop:value=move || combat_cards.get().get(idx).map(|c| c.stats[stat_idx].to_string()).unwrap_or_default()
+                                                    on:input=move |ev| if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.stats[stat_idx]=v; }); } /></label>
+                                            }).collect_view()}
                                         </div>
-                                        <div class="combat-mini-resources"><strong>{format!("PV: {}",card.pv)}</strong><strong>{format!("PM: {}",card.pm)}</strong></div>
-                                        <div class="combat-actions">
-                                            <button type="button" on:click=move |_| {
-                                                combat_card_name.set(edit_card.name.clone()); combat_card_stats.set(edit_card.stats);
-                                                combat_card_pv.set(edit_card.pv); combat_card_pm.set(edit_card.pm);
-                                                editing_combat_card.set(Some(edit_card.clone()));
-                                            }>"Editar"</button>
-                                            <button type="button" class="danger" on:click=move |_| {
-                                                let id=delete_id.clone(); let current_session=session.get();
+                                        <div class="combat-resource-edit">
+                                            <strong>"PV"</strong>
+                                            <div class="resource-control" class:resource-low=move || combat_cards.get().get(idx).map(|c| c.pv_max>0 && c.pv<=c.pv_max/4).unwrap_or(false)>
+                                                <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pv=(c.pv-5).max(0); })>"≪"</button>
+                                                <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pv=(c.pv-1).max(0); })>"‹"</button>
+                                                <div class="resource-meter">
+                                                    <div class="resource-meter-fill" style:width=move || combat_cards.get().get(idx).map(|c| format!("{}%",if c.pv_max>0 {c.pv.max(0).min(c.pv_max) as f64/c.pv_max as f64*100.0} else {0.0})).unwrap_or_default()></div>
+                                                    <span>{move || combat_cards.get().get(idx).map(|c| c.pv.to_string()).unwrap_or_default()}</span><span class="resource-value-separator">"/"</span>
+                                                    <input class="combat-resource-max" type="number" min="0" aria-label="PV máximo" prop:value=move || combat_cards.get().get(idx).map(|c| c.pv_max.to_string()).unwrap_or_default()
+                                                        on:input=move |ev| if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pv_max=v.max(0); }); } />
+                                                </div>
+                                                <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pv=c.pv.saturating_add(1); })>"›"</button>
+                                                <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pv=c.pv.saturating_add(5); })>"≫"</button>
+                                            </div>
+                                            <strong>"PM"</strong>
+                                            <div class="resource-control" class:resource-low=move || combat_cards.get().get(idx).map(|c| c.pm_max>0 && c.pm<=c.pm_max/4).unwrap_or(false)>
+                                                <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pm=(c.pm-5).max(0); })>"≪"</button>
+                                                <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pm=(c.pm-1).max(0); })>"‹"</button>
+                                                <div class="resource-meter">
+                                                    <div class="resource-meter-fill" style:width=move || combat_cards.get().get(idx).map(|c| format!("{}%",if c.pm_max>0 {c.pm.max(0).min(c.pm_max) as f64/c.pm_max as f64*100.0} else {0.0})).unwrap_or_default()></div>
+                                                    <span>{move || combat_cards.get().get(idx).map(|c| c.pm.to_string()).unwrap_or_default()}</span><span class="resource-value-separator">"/"</span>
+                                                    <input class="combat-resource-max" type="number" min="0" aria-label="PM máximo" prop:value=move || combat_cards.get().get(idx).map(|c| c.pm_max.to_string()).unwrap_or_default()
+                                                        on:input=move |ev| if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pm_max=v.max(0); }); } />
+                                                </div>
+                                                <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pm=c.pm.saturating_add(1); })>"›"</button>
+                                                <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pm=c.pm.saturating_add(5); })>"≫"</button>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="danger" on:click=move |_| {
+                                            let id=remove_id.clone();
+                                            if id.is_empty() { combat_cards.update(|items| { if idx<items.len() { items.remove(idx); } }); }
+                                            else {
+                                                let current_session=session.get();
                                                 spawn_local(async move {
                                                     match cloud::delete_combat_card(&current_session,&id).await {
-                                                        Ok(()) => combat_cards.update(|items| items.retain(|item| item.id != id)),
-                                                        Err(error) => combat_cards_error.set(error),
+                                                        Ok(())=>combat_cards.update(|items|items.retain(|item|item.id!=id)),
+                                                        Err(error)=>combat_cards_error.set(error),
                                                     }
                                                 });
-                                            }>"Excluir"</button>
-                                        </div>
+                                            }
+                                        }>"Excluir ficha"</button>
                                     </article>
                                 }
                             }).collect_view()}
                         </div>
-                        <Show when=move || !combat_cards_loading.get() && combat_cards.get().is_empty()><p class="hint">"Nenhuma ficha de combate criada ainda."</p></Show>
+                        <Show when=move || !combat_cards_loading.get() && combat_cards.get().is_empty() && !combat_card_form_open.get()>
+                            <p class="hint">"Nenhuma ficha de combate criada. Clique em Adicionar para começar."</p>
+                        </Show>
                     </section>
                 </Show>
 
