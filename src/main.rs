@@ -934,23 +934,6 @@ fn SheetApp(
                     <img class="site-logo" src="logo.png" alt="SAMSARA" />
                     <p>"Character Sheet Manager"</p>
                 </div>
-                <Show when=move || !master_mode.get()>
-                <label class="level level-control">
-                    <span>"NÍVEL"</span>
-                    <input
-                        type="number"
-                        min="1"
-                        max="10"
-                        aria-label="Nível do personagem"
-                        prop:value=move || sheet.get().level.to_string()
-                        on:input=move |ev| {
-                            if let Ok(v) = event_target_value(&ev).parse::<u8>() {
-                                sheet.update(|s| s.level = v.clamp(1, 10));
-                            }
-                        }
-                    />
-                </label>
-                </Show>
                 <Show when=move || is_master>
                     <button type="button" class="mode-toggle" class:mode-toggle-active=move || master_mode.get()
                         on:click=move |_| {
@@ -977,6 +960,24 @@ fn SheetApp(
                         {move || if master_mode.get() { "Modo Player" } else { "Modo Mestre" }}
                     </button>
                 </Show>
+                <Show when=move || !master_mode.get()>
+                <label class="level level-control">
+                    <span>"NÍVEL"</span>
+                    <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        aria-label="Nível do personagem"
+                        prop:value=move || sheet.get().level.to_string()
+                        on:input=move |ev| {
+                            if let Ok(v) = event_target_value(&ev).parse::<u8>() {
+                                sheet.update(|s| s.level = v.clamp(1, 10));
+                            }
+                        }
+                    />
+                </label>
+                </Show>
+
             </header>
 
             <nav class="tabs" aria-label="Seções">
