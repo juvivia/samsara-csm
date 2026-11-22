@@ -1276,7 +1276,7 @@ fn SheetApp(
                             <h3>"Ordem de ação"</h3>
                             <p class="hint">"Arraste os personagens para reorganizar a ordem. A alteração é sincronizada com os jogadores."</p>
                             <ol class="turn-order-list">
-                                {move || combat_state.get().map(|state| state.turn_order.iter().enumerate().map(|(index, participant)| {
+                                {move || combat_state.get().map(|state| { let current_index = state.current_index; state.turn_order.into_iter().enumerate().map(|(index, participant)| {
                                     let id = participant.character_id.clone();
                                     let drag_id = id.clone();
                                     let drop_id = id.clone();
@@ -1379,7 +1379,7 @@ fn SheetApp(
                                                             <option value="">"Sem condição"</option>
                                                             {move || conditions_library.get().into_iter().map(|condition| {
                                                                 let name = condition.name.clone();
-                                                                view! { <option value=name.clone()>{name}</option> }
+                                                                view! { <option value=name.clone()>{name.clone()}</option> }
                                                             }).collect_view()}
                                                         </select>
                                                     </label>
@@ -1392,7 +1392,7 @@ fn SheetApp(
                                             </Show>
                                         </li>
                                     }
-                                }).collect_view()).unwrap_or_default()}
+                                }).collect_view()).unwrap_or_default()})}
                             </ol>
                             <div class="combat-actions">
                                 <button type="button" class="resource-edit" on:click=move |_| {
