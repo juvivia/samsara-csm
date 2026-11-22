@@ -102,6 +102,77 @@ pub async fn save_combat_state(session: &AuthSession, state: &CombatState) -> Re
     Ok(())
 }
 
+
+/// Ficha auxiliar independente para encontros de combate.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CombatSheetCard {
+    pub id: String,
+    pub name: String,
+    pub stats: [i32; 5],
+    pub pv: i32,
+    pub pm: i32,
+}
+
+pub async fn list_combat_cards(session: &AuthSession) -> Result<Vec<CombatSheetCard>, String> {
+    if session.user.id != MASTER_UID { return Err("Acesso restrito à conta Mestre.".into()); }
+    let url = format!("{}/rest/v1/samsara_combat_cards?select=id,name,stats,pv,pm&order=created_at.asc", SUPABASE_URL);
+    let response = Request::get(&url)
+        .header("apikey", SUPABASE_KEY)
+        .header("Authorization", &format!("Bearer {}", session.access_token))
+        .send().await.map_err(|e| e.to_string())?;
+    if !response.ok() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        return Err(format!("Erro ao carregar fichas de combate ({}): {}", status, body));
+    }
+    response.json().await.map_err(|e| e.to_string())
+}
+
+pub async fn create_combat_card(session: &AuthSession, card: &CombatSheetCard) -> Result<CombatSheetCard, String> {
+    if session.user.id != MASTER_UID { return Err("Acesso restrito à conta Mestre.".into()); }
+    let body = serde_json::json!({"name":card.name,"stats":card.stats,"pv":card.pv,"pm":card.pm});
+    let url = format!("{}/rest/v1/samsara_combat_cards", SUPABASE_URL);
+    let response = Request::post(&url)
+        .header("apikey", SUPABASE_KEY)
+        .header("Authorization", &format!("Bearer {}", session.access_token))
+        .header("Content-Type", "application/json")
+        .header("Prefer", "return=representation")
+        .json(&body).map_err(|e| e.to_string())?
+        .send().await.map_err(|e| e.to_string())?;
+    if !response.ok() {
+        let status=response.status(); let body=response.text().await.unwrap_or_default();
+        return Err(format!("Erro ao criar ficha de combate ({}): {}",status,body));
+    }
+    let mut rows: Vec<CombatSheetCard> = response.json().await.map_err(|e| e.to_string())?;
+    rows.pop().ok_or_else(|| "O Supabase não retornou a ficha criada.".into())
+}
+
+pub async fn update_combat_card(session: &AuthSession, card: &CombatSheetCard) -> Result<(), String> {
+    if session.user.id != MASTER_UID { return Err("Acesso restrito à conta Mestre.".into()); }
+    let body=serde_json::json!({"name":card.name,"stats":card.stats,"pv":card.pv,"pm":card.pm});
+    let url=format!("{}/rest/v1/samsara_combat_cards?id=eq.{}",SUPABASE_URL,card.id);
+    let response=Request::patch(&url)
+        .header("apikey",SUPABASE_KEY)
+        .header("Authorization",&format!("Bearer {}",session.access_token))
+        .header("Content-Type","application/json")
+        .header("Prefer","return=minimal")
+        .json(&body).map_err(|e|e.to_string())?
+        .send().await.map_err(|e|e.to_string())?;
+    if !response.ok() { let status=response.status(); let body=response.text().await.unwrap_or_default(); return Err(format!("Erro ao editar ficha ({}): {}",status,body)); }
+    Ok(())
+}
+
+pub async fn delete_combat_card(session: &AuthSession, id: &str) -> Result<(), String> {
+    if session.user.id != MASTER_UID { return Err("Acesso restrito à conta Mestre.".into()); }
+    let url=format!("{}/rest/v1/samsara_combat_cards?id=eq.{}",SUPABASE_URL,id);
+    let response=Request::delete(&url)
+        .header("apikey",SUPABASE_KEY)
+        .header("Authorization",&format!("Bearer {}",session.access_token))
+        .send().await.map_err(|e|e.to_string())?;
+    if !response.ok() { let status=response.status(); let body=response.text().await.unwrap_or_default(); return Err(format!("Erro ao excluir ficha ({}): {}",status,body)); }
+    Ok(())
+}
+
 pub const MASTER_UID: &str = "ac5dd4c6-6aa7-47a6-8192-703b44ef3961";
 
 pub async fn list_all_characters(
