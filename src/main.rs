@@ -1537,9 +1537,6 @@ fn SheetApp(
                                 on:input=move |ev| {
                                     let value = event_target_value(&ev);
                                     master_info_notes.set(value.clone());
-                                    if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
-                                        let _ = storage.set_item("samsara-master-info-notes", &value);
-                                    }
                                 }
                             ></textarea>
                         </div>
@@ -2047,6 +2044,12 @@ fn SheetApp(
                         </button>
                     </Show>
 
+                    <Show when=move || master_mode.get() && is_master && (tab.get() == 5 || tab.get() == 6)>
+                        <button type="button" class="resource-edit" disabled=move || combat_cards_saving.get()
+                            on:click=move |_| save_master_workspace()>
+                            {move || if combat_cards_saving.get() { "Salvando..." } else { "Salvar ficha" }}
+                        </button>
+                    </Show>
                     <Show when=move || viewing_as_master.get()>
                         <button type="button" class="resource-edit" on:click=move |_| {
                             restore_own_sheet();
