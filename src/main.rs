@@ -395,7 +395,7 @@ fn SheetApp(
             sheet.set(own_sheet.get_value());
             character_id.set(own_character_id.get_value());
             portrait_url.set(None);
-            if let Some(path) = initial_portrait_path.clone() {
+            if let Some(path) = own_portrait_path.get_value() {
                 let current_session = session.get();
                 spawn_local(async move {
                     if let Ok(url) = cloud::portrait_signed_url(&current_session, &path).await {
