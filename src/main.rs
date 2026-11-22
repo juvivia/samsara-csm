@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{JsCast, closure::Closure};
 use wasm_bindgen_futures::{spawn_local, JsFuture};
 use js_sys::Uint8Array;
 
@@ -297,6 +297,8 @@ fn SheetApp(
     on_logout: Callback<()>,
 ) -> impl IntoView {
     let initial_portrait_path = initial_sheet.portrait_path.clone();
+    let own_sheet = StoredValue::new(initial_sheet.clone());
+    let own_character_id = StoredValue::new(character_id.clone());
     let sheet = RwSignal::new(initial_sheet);
     // Handles Copy evitam que closures internas do view! movam dados não-Copy.
     let session = RwSignal::new(session);
@@ -320,6 +322,13 @@ fn SheetApp(
     let master_loading = RwSignal::new(false);
     let master_error = RwSignal::new(String::new());
     let master_delete_pending = RwSignal::new(String::new());
+    let master_mode = RwSignal::new(false);
+    let combat_setup_open = RwSignal::new(false);
+    let combat_selected = RwSignal::new(Vec::<String>::new());
+    let combat_state = RwSignal::new(None::<cloud::CombatState>);
+    let combat_error = RwSignal::new(String::new());
+    let turn_popup_open = RwSignal::new(false);
+    let turn_popup_key = RwSignal::new(String::new());
 
     Effect::new(move |_| {
         let storage_key = format!("samsara-color-theme-{}", character_id.get());
@@ -339,6 +348,92 @@ fn SheetApp(
     }
 
     Effect::new(move |_| save_sheet(&sheet.get()));
+
+    let load_master_roster = move || {
+        master_loading.set(true);
+        master_error.set(String::new());
+        let current_session = session.get();
+        spawn_local(async move {
+            match cloud::list_all_characters(&current_session).await {
+                Ok(characters) => {
+                    let mut cards = Vec::new();
+                    for character in characters {
+                        let portrait = match character.portrait_path.as_deref() {
+                            Some(path) => cloud::portrait_signed_url(&current_session, path).await.ok(),
+                            None => None,
+                        };
+                        cards.push((character, portrait));
+                    }
+                    master_characters.set(cards);
+                }
+                Err(error) => master_error.set(error),
+            }
+            master_loading.set(false);
+        });
+    };
+
+    let persist_combat = move |state: cloud::CombatState| {
+        let current_session = session.get();
+        let state_signal = combat_state.clone();
+        let error_signal = combat_error.clone();
+        spawn_local(async move {
+            match cloud::save_combat_state(&current_session, &state).await {
+                Ok(()) => {
+                    state_signal.set(Some(state));
+                    error_signal.set(String::new());
+                }
+                Err(error) => error_signal.set(error),
+            }
+        });
+    };
+
+    // Os jogadores consultam o estado compartilhado periodicamente para receber o aviso.
+    let poll_session = session.clone();
+    let poll_character_id = character_id.clone();
+    let poll_master_mode = master_mode.clone();
+    let poll_viewing_as_master = viewing_as_master.clone();
+    let poll_popup = turn_popup_open.clone();
+    let poll_key = turn_popup_key.clone();
+    let poll_is_master = is_master;
+    let poll_callback = Closure::wrap(Box::new(move || {
+        if poll_is_master || poll_master_mode.get_untracked() || poll_viewing_as_master.get_untracked() {
+            return;
+        }
+        let current_session = poll_session.get_untracked();
+        let current_character_id = poll_character_id.get_untracked();
+        let popup = poll_popup.clone();
+        let popup_key = poll_key.clone();
+        spawn_local(async move {
+            match cloud::load_combat_state(&current_session).await {
+                Ok(Some(state)) if state.is_active => {
+                    if let Some(current) = state.turn_order.get(state.current_index) {
+                        if current.character_id == current_character_id {
+                            let key = format!("{}:{}:{}", state.round, state.current_index, current.character_id);
+                            if popup_key.get_untracked() != key {
+                                popup_key.set(key);
+                                popup.set(true);
+                            }
+                        } else {
+                            popup.set(false);
+                        }
+                    } else { popup.set(false); }
+                }
+                _ => popup.set(false),
+            }
+        });
+    }) as Box<dyn FnMut()>);
+    let poll_window = web_sys::window();
+    let poll_interval = poll_window.as_ref().and_then(|window| {
+        window.set_interval_with_callback_and_timeout_and_arguments_0(
+            poll_callback.as_ref().unchecked_ref(), 2500
+        ).ok()
+    });
+    on_cleanup(move || {
+        if let (Some(window), Some(interval)) = (poll_window, poll_interval) {
+            window.clear_interval_with_handle(interval);
+        }
+        drop(poll_callback);
+    });
 
     let skill_items = move || load_skill_items(&sheet.get().abilities);
 
@@ -802,6 +897,7 @@ fn SheetApp(
                     <img class="site-logo" src="logo.png" alt="SAMSARA" />
                     <p>"Character Sheet Manager"</p>
                 </div>
+                <Show when=move || !master_mode.get()>
                 <label class="level level-control">
                     <span>"NÍVEL"</span>
                     <input
@@ -817,50 +913,71 @@ fn SheetApp(
                         }
                     />
                 </label>
+                </Show>
+                <Show when=move || is_master>
+                    <button type="button" class="mode-toggle" class:mode-toggle-active=move || master_mode.get()
+                        on:click=move |_| {
+                            if !master_mode.get() {
+                                master_mode.set(true);
+                                viewing_as_master.set(false);
+                                resource_editing.set(false);
+                                tab.set(3);
+                                load_master_roster();
+                                let current_session = session.get();
+                                spawn_local(async move {
+                                    match cloud::load_combat_state(&current_session).await {
+                                        Ok(state) => combat_state.set(state),
+                                        Err(error) => combat_error.set(error),
+                                    }
+                                });
+                            } else {
+                                if viewing_as_master.get() {
+                                    sheet.set(own_sheet.get_value());
+                                    character_id.set(own_character_id.get_value());
+                                    portrait_url.set(None);
+                                    if let Some(path) = initial_portrait_path.clone() {
+                                        let current_session = session.get();
+                                        spawn_local(async move {
+                                            if let Ok(url) = cloud::portrait_signed_url(&current_session, &path).await {
+                                                portrait_url.set(Some(url));
+                                            }
+                                        });
+                                    }
+                                    viewing_as_master.set(false);
+                                }
+                                master_mode.set(false);
+                                tab.set(0);
+                                resource_editing.set(false);
+                            }
+                        }>
+                        {move || if master_mode.get() { "Modo Player" } else { "Modo Mestre" }}
+                    </button>
+                </Show>
             </header>
 
-            <nav class="tabs" aria-label="Seções da ficha">
-                <button class:active=move || tab.get() == 0 on:click=move |_| tab.set(0)>
-                    "Personagem"
-                </button>
-                <button class:active=move || tab.get() == 1 on:click=move |_| tab.set(1)>
-                    "Habilidades"
-                </button>
-                <button class:active=move || tab.get() == 2 on:click=move |_| tab.set(2)>
-                    "Anotações"
-                </button>
-                <Show when=move || is_master>
-                    <button class:active=move || tab.get() == 3 on:click=move |_| {
-                        viewing_as_master.set(false);
-                        tab.set(3);
-                        master_loading.set(true);
-                        master_error.set(String::new());
+            <nav class="tabs" aria-label="Seções">
+                <Show when=move || !master_mode.get()>
+                    <button class:active=move || tab.get() == 0 on:click=move |_| tab.set(0)>"Personagem"</button>
+                    <button class:active=move || tab.get() == 1 on:click=move |_| tab.set(1)>"Habilidades"</button>
+                    <button class:active=move || tab.get() == 2 on:click=move |_| tab.set(2)>"Anotações"</button>
+                </Show>
+                <Show when=move || master_mode.get()>
+                    <button class:active=move || tab.get() == 3 on:click=move |_| { tab.set(3); load_master_roster(); }>"Mestre"</button>
+                    <button class:active=move || tab.get() == 4 on:click=move |_| {
+                        tab.set(4);
                         let current_session = session.get();
                         spawn_local(async move {
-                            match cloud::list_all_characters(&current_session).await {
-                                Ok(characters) => {
-                                    let mut cards = Vec::new();
-                                    for character in characters {
-                                        let portrait = match character.portrait_path.as_deref() {
-                                            Some(path) => cloud::portrait_signed_url(&current_session, path).await.ok(),
-                                            None => None,
-                                        };
-                                        cards.push((character, portrait));
-                                    }
-                                    master_characters.set(cards);
-                                }
-                                Err(error) => master_error.set(error),
+                            match cloud::load_combat_state(&current_session).await {
+                                Ok(state) => combat_state.set(state),
+                                Err(error) => combat_error.set(error),
                             }
-                            master_loading.set(false);
                         });
-                    }>
-                        "Mestre"
-                    </button>
+                    }>"Turnos"</button>
                 </Show>
             </nav>
 
             <section class="content">
-                <Show when=move || tab.get() == 3 && is_master>
+                <Show when=move || tab.get() == 3 && master_mode.get() && is_master>
                     <section class="master-dashboard">
                         <h2>"Painel do Mestre"</h2>
                         <Show when=move || master_loading.get()><p>"Carregando fichas..."</p></Show>
@@ -899,6 +1016,7 @@ fn SheetApp(
                                                 character_id.set(current.id.clone());
                                                 portrait_url.set(None);
                                                 viewing_as_master.set(true);
+                                                master_mode.set(false);
                                                 tab.set(0);
                                                 if let Some(path) = current.portrait_path.clone() {
                                                     let auth_session = session.get();
@@ -933,7 +1051,7 @@ fn SheetApp(
                         </div>
                     </section>
                 </Show>
-                <Show when=move || tab.get() == 0>
+                <Show when=move || tab.get() == 0 && !master_mode.get()>
                     <div class="character-profile-layout">
                         <div class="portrait-card">
                             <label
@@ -1154,7 +1272,7 @@ fn SheetApp(
 
                 </Show>
 
-                <Show when=move || tab.get() == 1>
+                <Show when=move || tab.get() == 1 && !master_mode.get()>
                     <h2>"Habilidades"</h2>
                     <div class="skill-field">
                         <div class="skill-form">
@@ -1206,7 +1324,7 @@ fn SheetApp(
 
                 </Show>
 
-                <Show when=move || tab.get() == 2>
+                <Show when=move || tab.get() == 2 && !master_mode.get()>
                     <div class="notes-panel">
                         <h2>"Anotações"</h2>
                         <p class="hint">"Escreva.."</p>
@@ -1285,10 +1403,13 @@ fn SheetApp(
                     <Show when=move || viewing_as_master.get()>
                         <button type="button" class="resource-edit" on:click=move |_| {
                             viewing_as_master.set(false);
+                            master_mode.set(true);
                             tab.set(3);
+                            load_master_roster();
                             save_status.set("Retornou ao painel do Mestre.".to_string());
                         }>"Voltar ao Mestre"</button>
                     </Show>
+                    <Show when=move || !master_mode.get()>
                     <button
                         type="button"
                         class="resource-edit"
@@ -1323,6 +1444,7 @@ fn SheetApp(
                     >
                         {move || if saving.get() { "Salvando..." } else { "Salvar ficha" }}
                     </button>
+                    </Show>
 
                     <button
                         type="button"
