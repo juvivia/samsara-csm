@@ -175,7 +175,7 @@ pub async fn create_combat_card(session: &AuthSession, card: &CombatSheetCard) -
 
 pub async fn update_combat_card(session: &AuthSession, card: &CombatSheetCard) -> Result<(), String> {
     if session.user.id != MASTER_UID { return Err("Acesso restrito à conta Mestre.".into()); }
-    let body=serde_json::json!({"name":card.name,"stats":card.stats,"pv":card.pv,"pm":card.pm});
+    let body=serde_json::json!({"name":card.name,"stats":card.stats,"pv":card.pv,"pv_max":card.pv_max,"pm":card.pm,"pm_max":card.pm_max});
     let url=format!("{}/rest/v1/samsara_combat_cards?id=eq.{}",SUPABASE_URL,card.id);
     let response=Request::patch(&url)
         .header("apikey",SUPABASE_KEY)
