@@ -1336,16 +1336,19 @@ fn SheetApp(
                                                         <span>"Observações"</span>
                                                         <textarea rows="3" placeholder="Anotações para este jogador..."
                                                             prop:value=participant.notes.clone()
-                                                            on:change=move |ev| {
-                                                                let value = event_target_value(&ev);
-                                                                if let Some(mut next) = combat_state.get_untracked() {
-                                                                    for target in &mut next.turn_order {
-                                                                        if target.character_id == notes_id {
-                                                                            target.notes = value.clone();
-                                                                            break;
+                                                            on:change={
+                                                                let notes_id = notes_id.clone();
+                                                                move |ev| {
+                                                                    let value = event_target_value(&ev);
+                                                                    if let Some(mut next) = combat_state.get_untracked() {
+                                                                        for target in &mut next.turn_order {
+                                                                            if target.character_id == notes_id {
+                                                                                target.notes = value.clone();
+                                                                                break;
+                                                                            }
                                                                         }
+                                                                        persist_combat_state(session.get(), next, combat_state.clone(), combat_error.clone());
                                                                     }
-                                                                    persist_combat_state(session.get(), next, combat_state.clone(), combat_error.clone());
                                                                 }
                                                             }
                                                         ></textarea>
@@ -1371,7 +1374,8 @@ fn SheetApp(
                                                                     }
                                                                     persist_combat_state(session.get(), next, combat_state.clone(), combat_error.clone());
                                                                 }
-                                                            }
+                                                                }
+                                                            }}
                                                         >
                                                             <option value="">"Sem condição"</option>
                                                             {move || conditions_library.get().into_iter().map(|condition| {
