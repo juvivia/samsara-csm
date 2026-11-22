@@ -470,9 +470,36 @@ fn SheetApp(
     let poll_viewing_as_master = viewing_as_master.clone();
     let poll_popup = turn_popup_open.clone();
     let poll_key = turn_popup_key.clone();
+    let poll_tab = tab.clone();
+    let poll_conditions = conditions_library.clone();
     let poll_is_master = is_master;
     let poll_callback = Closure::wrap(Box::new(move || {
-        if poll_is_master || poll_master_mode.get_untracked() || poll_viewing_as_master.get_untracked() {
+        if poll_is_master {
+            if poll_master_mode.get_untracked() && poll_tab.get_untracked() == 4 {
+                let current_session = poll_session.get_untracked();
+                let library_signal = poll_conditions.clone();
+                spawn_local(async move {
+                    if let Ok(characters) = cloud::list_all_characters(&current_session).await {
+                        let mut library = Vec::<ConditionEntry>::new();
+                        for character in characters {
+                            let parsed = character.sheet_data.get("conditions")
+                                .and_then(|value| serde_json::from_value::<Vec<ConditionEntry>>(value.clone()).ok())
+                                .filter(|items| !items.is_empty())
+                                .unwrap_or_else(default_conditions);
+                            for condition in parsed {
+                                if !library.iter().any(|existing| existing.name.eq_ignore_ascii_case(&condition.name)) {
+                                    library.push(condition);
+                                }
+                            }
+                        }
+                        library.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+                        library_signal.set(library);
+                    }
+                });
+            }
+            return;
+        }
+        if poll_master_mode.get_untracked() || poll_viewing_as_master.get_untracked() {
             return;
         }
         let current_session = poll_session.get_untracked();
@@ -1252,6 +1279,11 @@ fn SheetApp(
                                     let id = participant.character_id.clone();
                                     let drag_id = id.clone();
                                     let drop_id = id.clone();
+                                    let expand_id = id.clone();
+                                    let expand_label_id = id.clone();
+                                    let show_details_id = id.clone();
+                                    let notes_id = id.clone();
+                                    let condition_id = id.clone();
                                     let is_current = index == state.current_index;
                                     view! {
                                         <li class:current-turn=is_current draggable="true"
@@ -1287,16 +1319,16 @@ fn SheetApp(
                                                     aria-label="Abrir observações e condição"
                                                     on:click=move |ev| {
                                                         ev.stop_propagation();
-                                                        if expanded_turn_player.get_untracked() == id {
+                                                        if expanded_turn_player.get_untracked() == expand_id {
                                                             expanded_turn_player.set(String::new());
                                                         } else {
-                                                            expanded_turn_player.set(id.clone());
+                                                            expanded_turn_player.set(expand_id.clone());
                                                         }
                                                     }>
-                                                    {move || if expanded_turn_player.get() == id { "⌄" } else { "›" }}
+                                                    {move || if expanded_turn_player.get() == expand_label_id { "⌄" } else { "›" }}
                                                 </button>
                                             </div>
-                                            <Show when=move || expanded_turn_player.get() == id>
+                                            <Show when=move || expanded_turn_player.get() == show_details_id>
                                                 <div class="turn-player-details">
                                                     <label>
                                                         <span>"Observações"</span>
@@ -1305,7 +1337,7 @@ fn SheetApp(
                                                             on:change=move |ev| {
                                                                 let value = event_target_value(&ev);
                                                                 if let Some(mut next) = combat_state.get_untracked() {
-                                                                    if let Some(target) = next.turn_order.iter_mut().find(|p| p.character_id == id) {
+                                                                    if let Some(target) = next.turn_order.iter_mut().find(|p| p.character_id == notes_id) {
                                                                         target.notes = value;
                                                                     }
                                                                     persist_combat_state(session.get(), next, combat_state.clone(), combat_error.clone());
@@ -1323,7 +1355,7 @@ fn SheetApp(
                                                                     .find(|item| item.name == selected)
                                                                     .map(|item| item.description).unwrap_or_default();
                                                                 if let Some(mut next) = combat_state.get_untracked() {
-                                                                    if let Some(target) = next.turn_order.iter_mut().find(|p| p.character_id == id) {
+                                                                    if let Some(target) = next.turn_order.iter_mut().find(|p| p.character_id == condition_id) {
                                                                         target.condition_name = selected;
                                                                         target.condition_description = description;
                                                                     }
