@@ -355,7 +355,7 @@ fn SheetApp(
         }
     });
 
-    if let Some(path) = own_portrait_path.get_value() {
+    if let Some(path) = own_portrait_path.clone().get_value() {
         let current_session = session.get();
         spawn_local(async move {
             match cloud::portrait_signed_url(&current_session, &path).await {
@@ -392,8 +392,8 @@ fn SheetApp(
 
     let restore_own_sheet = move || {
         if viewing_as_master.get_untracked() {
-            sheet.set(own_sheet.get_value());
-            character_id.set(own_character_id.get_value());
+            sheet.set(own_sheet.clone().get_value());
+            character_id.set(own_character_id.clone().get_value());
             portrait_url.set(None);
             if let Some(path) = own_portrait_path.get_value() {
                 let current_session = session.get();
