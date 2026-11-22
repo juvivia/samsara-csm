@@ -371,10 +371,6 @@ fn SheetApp(
     let turn_popup_participant = RwSignal::new(None::<cloud::CombatParticipant>);
     let expanded_turn_player = RwSignal::new(String::new());
     let conditions_library = RwSignal::new(default_conditions());
-    let condition_name = RwSignal::new(String::new());
-    let condition_description = RwSignal::new(String::new());
-    let condition_form_open = RwSignal::new(false);
-
     Effect::new(move |_| {
         let storage_key = format!("samsara-color-theme-{}", character_id.get());
         if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
@@ -547,48 +543,6 @@ fn SheetApp(
         sheet.update(|s| {
             s.abilities = serde_json::to_string(&items).unwrap_or_default();
         });
-    };
-
-    let add_condition = move |_| {
-        let name = condition_name.get().trim().to_string();
-        let description = condition_description.get().trim().to_string();
-        if name.is_empty() || description.is_empty() {
-            return;
-        }
-        let mut current = sheet.get_untracked();
-        if current.conditions.iter().any(|item| item.name.eq_ignore_ascii_case(&name)) {
-            return;
-        }
-        current.conditions.push(ConditionEntry { name, description });
-        current.conditions.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
-        sheet.set(current.clone());
-        let current_session = session.get_untracked();
-        let current_id = character_id.get_untracked();
-        let is_master_view = viewing_as_master.get_untracked();
-        let data = match serde_json::to_value(&current) {
-            Ok(value) => value,
-            Err(error) => {
-                save_status.set(format!("Erro ao preparar condição: {}", error));
-                return;
-            }
-        };
-        let current_name = current.name.clone();
-        let portrait_path = current.portrait_path.clone();
-        save_status.set("Salvando nova condição...".to_string());
-        spawn_local(async move {
-            let result = if is_master_view {
-                cloud::update_character_as_master(&current_session, &current_id, &current_name, portrait_path.as_deref(), data).await
-            } else {
-                cloud::update_character(&current_session, &current_id, &current_name, portrait_path.as_deref(), data).await
-            };
-            match result {
-                Ok(()) => save_status.set("Condição adicionada e sincronizada.".to_string()),
-                Err(error) => save_status.set(format!("A condição ficou na ficha, mas não foi sincronizada: {}", error)),
-            }
-        });
-        condition_name.set(String::new());
-        condition_description.set(String::new());
-        condition_form_open.set(false);
     };
 
     let add_skill = move |_| {
@@ -1242,6 +1196,7 @@ fn SheetApp(
                                                     notes: String::new(),
                                                     condition_name: String::new(),
                                                     condition_description: String::new(),
+                                                    conditions: Vec::new(),
                                                 }).collect();
                                             if participants.is_empty() {
                                                 combat_error.set("Selecione pelo menos um personagem.".to_string());
@@ -1285,6 +1240,16 @@ fn SheetApp(
                                     let show_details_id = id.clone();
                                     let notes_id = id.clone();
                                     let condition_id = id.clone();
+                                    let assigned_conditions = if participant.conditions.is_empty() {
+                                        if participant.condition_name.is_empty() { Vec::new() } else {
+                                            vec![cloud::CombatCondition {
+                                                name: participant.condition_name.clone(),
+                                                description: participant.condition_description.clone(),
+                                            }]
+                                        }
+                                    } else {
+                                        participant.conditions.clone()
+                                    };
                                     let is_current = index == current_index;
                                     view! {
                                         <li class:current-turn=is_current draggable="true"
@@ -1353,41 +1318,90 @@ fn SheetApp(
                                                         ></textarea>
                                                     </label>
                                                     <label>
-                                                        <span>"Condição"</span>
+                                                        <span>"Adicionar condição"</span>
                                                         <select
-                                                            prop:value=participant.condition_name.clone()
                                                             on:change={
                                                                 let condition_id = condition_id.clone();
                                                                 move |ev| {
-                                                                let selected = event_target_value(&ev);
-                                                                let description = conditions_library.get().into_iter()
-                                                                    .find(|item| item.name == selected)
-                                                                    .map(|item| item.description).unwrap_or_default();
-                                                                if let Some(mut next) = combat_state.get_untracked() {
-                                                                    for target in &mut next.turn_order {
-                                                                        if target.character_id == condition_id {
-                                                                            target.condition_name = selected.clone();
-                                                                            target.condition_description = description.clone();
-                                                                            break;
+                                                                    let selected = event_target_value(&ev);
+                                                                    if selected.is_empty() { return; }
+                                                                    let Some(condition) = conditions_library.get().into_iter().find(|item| item.name == selected) else { return; };
+                                                                    if let Some(mut next) = combat_state.get_untracked() {
+                                                                        for target in &mut next.turn_order {
+                                                                            if target.character_id == condition_id {
+                                                                                if target.conditions.is_empty() && !target.condition_name.is_empty() {
+                                                                                    target.conditions.push(cloud::CombatCondition {
+                                                                                        name: target.condition_name.clone(),
+                                                                                        description: target.condition_description.clone(),
+                                                                                    });
+                                                                                }
+                                                                                if !target.conditions.iter().any(|item| item.name.eq_ignore_ascii_case(&condition.name)) {
+                                                                                    target.conditions.push(cloud::CombatCondition {
+                                                                                        name: condition.name.clone(),
+                                                                                        description: condition.description.clone(),
+                                                                                    });
+                                                                                }
+                                                                                target.condition_name.clear();
+                                                                                target.condition_description.clear();
+                                                                                break;
+                                                                            }
                                                                         }
+                                                                        persist_combat_state(session.get(), next, combat_state.clone(), combat_error.clone());
                                                                     }
-                                                                    persist_combat_state(session.get(), next, combat_state.clone(), combat_error.clone());
-                                                                }
                                                                 }
                                                             }
                                                         >
-                                                            <option value="">"Sem condição"</option>
+                                                            <option value="">"Selecione para adicionar..."</option>
                                                             {move || conditions_library.get().into_iter().map(|condition| {
                                                                 let name = condition.name.clone();
                                                                 view! { <option value=name.clone()>{name.clone()}</option> }
                                                             }).collect_view()}
                                                         </select>
                                                     </label>
-                                                    {if participant.condition_name.is_empty() {
-                                                        view! { <p class="turn-detail-hint">"Nenhuma condição atribuída."</p> }.into_any()
-                                                    } else {
-                                                        view! { <p class="turn-condition-preview"><strong>{participant.condition_name.clone()}</strong>{participant.condition_description.clone()}</p> }.into_any()
-                                                    }}
+                                                    <div class="turn-assigned-conditions">
+                                                        <strong>"Condições ativas"</strong>
+                                                        {if assigned_conditions.is_empty() {
+                                                            view! { <p class="turn-detail-hint">"Nenhuma condição atribuída."</p> }.into_any()
+                                                        } else {
+                                                            view! {
+                                                                <div class="turn-condition-list">
+                                                                    {assigned_conditions.into_iter().map(|condition| {
+                                                                        let remove_id = condition_id.clone();
+                                                                        let remove_name = condition.name.clone();
+                                                                        view! {
+                                                                            <div class="turn-condition-item">
+                                                                                <div class="turn-condition-preview">
+                                                                                    <strong>{condition.name}</strong>
+                                                                                    <span>{condition.description}</span>
+                                                                                </div>
+                                                                                <button type="button" class="turn-condition-remove"
+                                                                                    on:click=move |_| {
+                                                                                        if let Some(mut next) = combat_state.get_untracked() {
+                                                                                            for target in &mut next.turn_order {
+                                                                                                if target.character_id == remove_id {
+                                                                                                    if target.conditions.is_empty() && !target.condition_name.is_empty() {
+                                                                                                        target.conditions.push(cloud::CombatCondition {
+                                                                                                            name: target.condition_name.clone(),
+                                                                                                            description: target.condition_description.clone(),
+                                                                                                        });
+                                                                                                    }
+                                                                                                    target.conditions.retain(|item| item.name != remove_name);
+                                                                                                    target.condition_name.clear();
+                                                                                                    target.condition_description.clear();
+                                                                                                    break;
+                                                                                                }
+                                                                                            }
+                                                                                            persist_combat_state(session.get(), next, combat_state.clone(), combat_error.clone());
+                                                                                        }
+                                                                                    }
+                                                                                >"Remover"</button>
+                                                                            </div>
+                                                                        }
+                                                                    }).collect_view()}
+                                                                </div>
+                                                            }.into_any()
+                                                        }}
+                                                    </div>
                                                 </div>
                                             </Show>
                                         </li>
@@ -1675,24 +1689,7 @@ fn SheetApp(
                     <section class="conditions-section">
                         <div class="conditions-heading">
                             <h2>"Condições"</h2>
-                            <button type="button" class="resource-edit" on:click=move |_| condition_form_open.update(|open| *open = !*open)>
-                                {move || if condition_form_open.get() { "Cancelar" } else { "Adicionar condição" }}
-                            </button>
                         </div>
-                        <Show when=move || condition_form_open.get()>
-                            <div class="condition-create-form">
-                                <label>"Nome"
-                                    <input placeholder="Nome da condição" prop:value=move || condition_name.get()
-                                        on:input=move |ev| condition_name.set(event_target_value(&ev)) />
-                                </label>
-                                <label>"Descrição"
-                                    <textarea rows="3" placeholder="Descreva o efeito da condição..."
-                                        prop:value=move || condition_description.get()
-                                        on:input=move |ev| condition_description.set(event_target_value(&ev))></textarea>
-                                </label>
-                                <button type="button" class="skill-add" on:click=add_condition>"Salvar condição"</button>
-                            </div>
-                        </Show>
                         <div class="conditions-list" aria-label="Glossário de condições">
                             {move || {
                                 let items = if sheet.get().conditions.is_empty() { default_conditions() } else { sheet.get().conditions };
@@ -1721,19 +1718,26 @@ fn SheetApp(
             <Show when=move || turn_popup_open.get() && !master_mode.get()>
                 <div class="turn-notification-backdrop" role="dialog" aria-modal="true" aria-label="Aviso de turno">
                     <div class="turn-notification">
-                        <span>"SAMSARA"</span>
                         <h2>"É a sua vez!"</h2>
                         <p>"Seu personagem está na vez de agir."</p>
                         {move || turn_popup_participant.get().map(|participant| view! {
                             <>
-                                {if !participant.condition_name.is_empty() {
-                                    view! {
+                                {let popup_conditions = if participant.conditions.is_empty() {
+                                    if participant.condition_name.is_empty() { Vec::new() } else {
+                                        vec![cloud::CombatCondition {
+                                            name: participant.condition_name.clone(),
+                                            description: participant.condition_description.clone(),
+                                        }]
+                                    }
+                                } else { participant.conditions.clone() };
+                                view! {
+                                    {popup_conditions.into_iter().map(|condition| view! {
                                         <section class="turn-popup-condition">
-                                            <strong>{format!("Condição: {}", participant.condition_name)}</strong>
-                                            <p>{participant.condition_description}</p>
+                                            <strong>{format!("Condição: {}", condition.name)}</strong>
+                                            <p>{condition.description}</p>
                                         </section>
-                                    }.into_any()
-                                } else { view! { <></> }.into_any() }}
+                                    }).collect_view()}
+                                }}
                                 {if !participant.notes.trim().is_empty() {
                                     view! {
                                         <section class="turn-popup-notes">
