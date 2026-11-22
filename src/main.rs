@@ -1375,7 +1375,7 @@ fn SheetApp(
                                                                     persist_combat_state(session.get(), next, combat_state.clone(), combat_error.clone());
                                                                 }
                                                                 }
-                                                            }}
+                                                            }
                                                         >
                                                             <option value="">"Sem condição"</option>
                                                             {move || conditions_library.get().into_iter().map(|condition| {
