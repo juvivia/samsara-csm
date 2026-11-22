@@ -1,3 +1,41 @@
+
+
+/* Abas administrativas: Info e fichas auxiliares de combate */
+.master-info-dashboard,.master-combat-sheets { display:grid; gap:16px; }
+.master-info-dashboard > h2,.master-combat-sheets > h2 { margin:0; }
+.master-info-notes,.master-tests-reference,.combat-card-editor,.combat-mini-card {
+    display:grid; gap:11px; padding:15px; border:1px solid var(--theme-c-364148);
+    border-radius:9px; background:var(--theme-c-171d21);
+}
+.master-info-notes h3,.master-tests-reference h3,.combat-card-editor h3 { margin:0; }
+.master-info-notes textarea {
+    width:100%; box-sizing:border-box; min-height:190px; resize:vertical;
+    padding:12px; border:1px solid var(--theme-c-364148); border-radius:7px;
+    background:var(--theme-c-14191d); color:var(--theme-c-e8eeee); font:inherit;
+}
+.master-tests-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:9px; }
+.master-test-reference-card {
+    display:grid; gap:6px; padding:11px; border:1px solid var(--theme-c-30383e);
+    border-radius:7px; background:var(--theme-c-14191d);
+}
+.master-test-reference-card strong { color:var(--theme-c-b4d1c2); }
+.master-test-reference-card span { color:var(--theme-c-859098); font-size:12px; }
+.combat-card-editor label { display:grid; gap:6px; color:var(--theme-c-b4d1c2); font-size:12px; }
+.combat-card-editor input {
+    width:100%; min-width:0; box-sizing:border-box; padding:9px;
+    border:1px solid var(--theme-c-364148); border-radius:6px;
+    background:var(--theme-c-14191d); color:var(--theme-c-e8eeee); font:inherit;
+}
+.combat-card-stats { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; }
+.combat-card-resources { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.combat-cards-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; }
+.combat-mini-card h3 { margin:0; overflow-wrap:anywhere; }
+.combat-mini-stats { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:5px; }
+.combat-mini-stats span { display:grid; gap:4px; text-align:center; padding:7px 3px; border-radius:6px; background:var(--theme-c-14191d); font-size:12px; }
+.combat-mini-stats strong { color:var(--theme-c-b4d1c2); font-size:10px; }
+.combat-mini-resources { display:flex; justify-content:space-around; padding:9px; border-radius:6px; background:var(--theme-c-202c27); color:var(--theme-c-b4d1c2); }
+.combat-card-editor .combat-actions button,.combat-mini-card .combat-actions button { cursor:pointer; }
+@media(max-width:540px) { .combat-card-stats { grid-template-columns:repeat(3,minmax(0,1fr)); } .master-tests-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 :root { font-family: Inter, system-ui, -apple-system, sans-serif; color: #e8e9e9; background: #111418; }
 * { box-sizing: border-box; }
 body { margin: 0; }
