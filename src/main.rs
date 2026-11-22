@@ -901,7 +901,6 @@ fn SheetApp(
                                                             aria-label="Descrição da pasta"
                                                             prop:value=folder_description.clone()
                                                             on:change={
-                                                                let notes_id = notes_id.clone();
                                                                 move |ev| {
                                                                 let value = event_target_value(&ev);
                                                                 let mut current = skill_items();
