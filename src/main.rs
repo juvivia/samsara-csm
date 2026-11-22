@@ -1219,7 +1219,7 @@ fn SheetApp(
                                                 save_status.set("Ficha aberta em modo Mestre.".to_string());
                                             }>"Abrir ficha"</button>
                                             <Show when=move || master_delete_pending.get() == show_card_id.clone()>
-                                                <button type="button" class="danger" on:click=move |_| {
+                                                <button type="button" class="inventory-icon-button inventory-delete-icon master-delete-icon" aria-label="Confirmar exclusão da ficha" title="Confirmar exclusão" on:click=move |_| {
                                                     let auth_session = session.get();
                                                     let target = delete_target.get_value();
                                                     spawn_local(async move {
@@ -1231,9 +1231,19 @@ fn SheetApp(
                                                             Err(error) => master_error.set(error),
                                                         }
                                                     });
-                                                }>"Confirmar"</button>
+                                                }><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M3 6h18"/>
+                                                    <path d="M8 6V4h8v2"/>
+                                                    <path d="m19 6-1 14H6L5 6"/>
+                                                    <path d="M10 11v5M14 11v5"/>
+                                                </svg></button>
                                             </Show>
-                                            <button type="button" class="danger" on:click=move |_| master_delete_pending.set(button_card_id.clone())>"Excluir"</button>
+                                            <button type="button" class="inventory-icon-button inventory-delete-icon master-delete-icon" aria-label="Excluir ficha" title="Excluir ficha" on:click=move |_| master_delete_pending.set(button_card_id.clone())><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M3 6h18"/>
+                                                    <path d="M8 6V4h8v2"/>
+                                                    <path d="m19 6-1 14H6L5 6"/>
+                                                    <path d="M10 11v5M14 11v5"/>
+                                                </svg></button>
                                         </div>
                                     </article>
                                 }
@@ -1492,7 +1502,12 @@ fn SheetApp(
                                                                                             persist_combat_state(session.get(), next, combat_state.clone(), combat_error.clone());
                                                                                         }
                                                                                     }
-                                                                                >"Remover"</button>
+                                                                                ><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M3 6h18"/>
+                                                    <path d="M8 6V4h8v2"/>
+                                                    <path d="m19 6-1 14H6L5 6"/>
+                                                    <path d="M10 11v5M14 11v5"/>
+                                                </svg></button>
                                                                             </div>
                                                                         }
                                                                     }).collect_view()}
@@ -1674,7 +1689,7 @@ fn SheetApp(
                                                 <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pm=c.pm.saturating_add(5); })>"≫"</button>
                                             </div>
                                         </div>
-                                        <button type="button" class="danger" on:click=move |_| {
+                                        <button type="button" class="inventory-icon-button inventory-delete-icon master-delete-icon" aria-label="Excluir ficha de combate" title="Excluir ficha de combate" on:click=move |_| {
                                             let id=remove_id.clone();
                                             if id.is_empty() { combat_cards.update(|items| { if idx<items.len() { items.remove(idx); } }); }
                                             else {
@@ -1686,7 +1701,12 @@ fn SheetApp(
                                                     }
                                                 });
                                             }
-                                        }>"Excluir ficha"</button>
+                                        }><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M3 6h18"/>
+                                                    <path d="M8 6V4h8v2"/>
+                                                    <path d="m19 6-1 14H6L5 6"/>
+                                                    <path d="M10 11v5M14 11v5"/>
+                                                </svg></button>
                                     </article>
                                 }
                             }).collect_view()}
