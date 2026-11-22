@@ -371,6 +371,16 @@ fn SheetApp(
     let turn_popup_participant = RwSignal::new(None::<cloud::CombatParticipant>);
     let expanded_turn_player = RwSignal::new(String::new());
     let conditions_library = RwSignal::new(default_conditions());
+    let master_info_notes = RwSignal::new(web_sys::window().and_then(|w| w.local_storage().ok().flatten()).and_then(|storage| storage.get_item("samsara-master-info-notes").ok().flatten()).unwrap_or_default());
+    let combat_cards = RwSignal::new(Vec::<cloud::CombatSheetCard>::new());
+    let combat_card_name = RwSignal::new(String::new());
+    let combat_card_pv = RwSignal::new(10i32);
+    let combat_card_pm = RwSignal::new(5i32);
+    let combat_card_stats = RwSignal::new([0i32; 5]);
+    let editing_combat_card = RwSignal::new(None::<cloud::CombatSheetCard>);
+    let combat_cards_loading = RwSignal::new(false);
+    let combat_cards_error = RwSignal::new(String::new());
+    let combat_cards_saving = RwSignal::new(false);
     Effect::new(move |_| {
         let storage_key = format!("samsara-color-theme-{}", character_id.get());
         if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
@@ -389,6 +399,19 @@ fn SheetApp(
     }
 
     Effect::new(move |_| save_sheet(&sheet.get()));
+
+    let load_combat_cards = move || {
+        combat_cards_loading.set(true);
+        combat_cards_error.set(String::new());
+        let current_session = session.get();
+        spawn_local(async move {
+            match cloud::list_combat_cards(&current_session).await {
+                Ok(cards) => combat_cards.set(cards),
+                Err(error) => combat_cards_error.set(error),
+            }
+            combat_cards_loading.set(false);
+        });
+    };
 
     let load_master_roster = move || {
         master_loading.set(true);
@@ -1092,6 +1115,8 @@ fn SheetApp(
                             }
                         });
                     }>"Turnos"</button>
+                    <button class:active=move || tab.get() == 5 on:click=move |_| tab.set(5)>"Info"</button>
+                    <button class:active=move || tab.get() == 6 on:click=move |_| { tab.set(6); load_combat_cards(); }>"Combate"</button>
                 </Show>
             </nav>
 
@@ -1461,6 +1486,135 @@ fn SheetApp(
                                 }>"Encerrar combate"</button>
                             </div>
                         </Show>
+                    </section>
+                </Show>
+
+                <Show when=move || tab.get() == 5 && master_mode.get() && is_master>
+                    <section class="master-info-dashboard">
+                        <h2>"Info"</h2>
+                        <div class="master-info-notes">
+                            <h3>"Anotações do Mestre"</h3>
+                            <textarea rows="12" placeholder="Anotações gerais da campanha..." prop:value=move || master_info_notes.get()
+                                on:input=move |ev| {
+                                    let value = event_target_value(&ev);
+                                    master_info_notes.set(value.clone());
+                                    if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
+                                        let _ = storage.set_item("samsara-master-info-notes", &value);
+                                    }
+                                }
+                            ></textarea>
+                        </div>
+                        <section class="master-tests-reference">
+                            <h3>"Tipos de testes"</h3>
+                            <div class="master-tests-grid">
+                                {[
+                                    ("Desviar","VEL + HAB"),("Sobrevivência","FIS + INT / HAB"),("Social","DOM"),
+                                    ("Combate","FIS + HAB / VEL"),("Escapar","VEL + FIS"),("Pontaria","HAB"),
+                                    ("Inventar","HAB + INT"),("Medicina","DOM + INT"),("Investigação","INT"),
+                                    ("Elusão","HAB"),("Capacidade","FIS"),("Acrobacia","VEL + HAB"),
+                                    ("Iniciativa","VEL"),("Percepção","HAB + DOM"),("Resistir","FIS + DOM"),("Dharma","DOM")
+                                ].into_iter().map(|(name, formula)| view! {
+                                    <article class="master-test-reference-card"><strong>{name}</strong><span>{formula}</span></article>
+                                }).collect_view()}
+                            </div>
+                        </section>
+                    </section>
+                </Show>
+
+                <Show when=move || tab.get() == 6 && master_mode.get() && is_master>
+                    <section class="master-combat-sheets">
+                        <h2>"Combate"</h2>
+                        <p class="hint">"Crie fichas auxiliares para acompanhar criaturas, aliados ou inimigos durante os encontros."</p>
+                        <form class="combat-card-editor" on:submit=move |ev| {
+                            ev.prevent_default();
+                            let name = combat_card_name.get().trim().to_string();
+                            if name.is_empty() { combat_cards_error.set("Informe um nome para a ficha.".to_string()); return; }
+                            let card = cloud::CombatSheetCard {
+                                id: editing_combat_card.get_untracked().map(|item| item.id).unwrap_or_default(),
+                                name, stats: combat_card_stats.get(), pv: combat_card_pv.get(), pm: combat_card_pm.get(),
+                            };
+                            let current_session = session.get();
+                            combat_cards_saving.set(true);
+                            combat_cards_error.set(String::new());
+                            spawn_local(async move {
+                                let result = if card.id.is_empty() {
+                                    cloud::create_combat_card(&current_session, &card).await
+                                } else {
+                                    cloud::update_combat_card(&current_session, &card).await.map(|_| card.clone())
+                                };
+                                match result {
+                                    Ok(saved) => {
+                                        combat_cards.update(|items| {
+                                            if let Some(index) = items.iter().position(|item| item.id == saved.id) { items[index] = saved; }
+                                            else { items.push(saved); }
+                                        });
+                                        editing_combat_card.set(None);
+                                        combat_card_name.set(String::new());
+                                        combat_card_pv.set(10);
+                                        combat_card_pm.set(5);
+                                        combat_card_stats.set([0; 5]);
+                                    }
+                                    Err(error) => combat_cards_error.set(error),
+                                }
+                                combat_cards_saving.set(false);
+                            });
+                        }>
+                            <h3>{move || if editing_combat_card.get().is_some() { "Editar ficha" } else { "Nova ficha" }}</h3>
+                            <label>"Nome"<input required placeholder="Nome da criatura ou personagem" prop:value=move || combat_card_name.get() on:input=move |ev| combat_card_name.set(event_target_value(&ev)) /></label>
+                            <div class="combat-card-stats">
+                                {["INT","FIS","DOM","VEL","HAB"].into_iter().enumerate().map(|(index, label)| view! {
+                                    <label>{label}<input type="number" prop:value=move || combat_card_stats.get()[index].to_string()
+                                        on:input=move |ev| { if let Ok(value)=event_target_value(&ev).parse::<i32>() { combat_card_stats.update(|stats| stats[index]=value); } } /></label>
+                                }).collect_view()}
+                            </div>
+                            <div class="combat-card-resources">
+                                <label>"PV"<input type="number" min="0" prop:value=move || combat_card_pv.get().to_string() on:input=move |ev| { if let Ok(value)=event_target_value(&ev).parse::<i32>() { combat_card_pv.set(value.max(0)); } } /></label>
+                                <label>"PM"<input type="number" min="0" prop:value=move || combat_card_pm.get().to_string() on:input=move |ev| { if let Ok(value)=event_target_value(&ev).parse::<i32>() { combat_card_pm.set(value.max(0)); } } /></label>
+                            </div>
+                            <div class="combat-actions">
+                                <button type="submit" disabled=move || combat_cards_saving.get()>{move || if combat_cards_saving.get() { "Salvando..." } else if editing_combat_card.get().is_some() { "Salvar edição" } else { "Salvar ficha" }}</button>
+                                <Show when=move || editing_combat_card.get().is_some()>
+                                    <button type="button" class="danger" on:click=move |_| {
+                                        editing_combat_card.set(None); combat_card_name.set(String::new());
+                                        combat_card_pv.set(10); combat_card_pm.set(5); combat_card_stats.set([0;5]);
+                                    }>"Cancelar"</button>
+                                </Show>
+                            </div>
+                        </form>
+                        <Show when=move || !combat_cards_error.get().is_empty()><p class="auth-error">{move || combat_cards_error.get()}</p></Show>
+                        <Show when=move || combat_cards_loading.get()><p>"Carregando fichas..."</p></Show>
+                        <div class="combat-cards-grid">
+                            {move || combat_cards.get().into_iter().map(|card| {
+                                let edit_card=card.clone();
+                                let delete_id=card.id.clone();
+                                view! {
+                                    <article class="combat-mini-card">
+                                        <h3>{card.name.clone()}</h3>
+                                        <div class="combat-mini-stats">
+                                            {["INT","FIS","DOM","VEL","HAB"].into_iter().zip(card.stats.iter().copied()).map(|(label,value)| view! { <span><strong>{label}</strong>{value}</span> }).collect_view()}
+                                        </div>
+                                        <div class="combat-mini-resources"><strong>{format!("PV: {}",card.pv)}</strong><strong>{format!("PM: {}",card.pm)}</strong></div>
+                                        <div class="combat-actions">
+                                            <button type="button" on:click=move |_| {
+                                                combat_card_name.set(edit_card.name.clone()); combat_card_stats.set(edit_card.stats);
+                                                combat_card_pv.set(edit_card.pv); combat_card_pm.set(edit_card.pm);
+                                                editing_combat_card.set(Some(edit_card.clone()));
+                                            }>"Editar"</button>
+                                            <button type="button" class="danger" on:click=move |_| {
+                                                let id=delete_id.clone(); let current_session=session.get();
+                                                spawn_local(async move {
+                                                    match cloud::delete_combat_card(&current_session,&id).await {
+                                                        Ok(()) => combat_cards.update(|items| items.retain(|item| item.id != id)),
+                                                        Err(error) => combat_cards_error.set(error),
+                                                    }
+                                                });
+                                            }>"Excluir"</button>
+                                        </div>
+                                    </article>
+                                }
+                            }).collect_view()}
+                        </div>
+                        <Show when=move || !combat_cards_loading.get() && combat_cards.get().is_empty()><p class="hint">"Nenhuma ficha de combate criada ainda."</p></Show>
                     </section>
                 </Show>
 
