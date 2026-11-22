@@ -1117,3 +1117,27 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     border-bottom-color: var(--theme-c-b4d1c2);
     background: var(--theme-c-171d21);
 }
+
+
+/* Ações destrutivas do painel do Mestre usam o mesmo ícone vetorial da interface. */
+.master-character-actions .master-delete-icon,
+.combat-mini-card > .master-delete-icon {
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.turn-condition-remove.inventory-icon-button {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border-color: transparent;
+    font-size: 0;
+}
+.turn-condition-remove.inventory-icon-button svg {
+    display: block;
+}
