@@ -900,14 +900,16 @@ fn SheetApp(
                                                             placeholder="Descrição da pasta..."
                                                             aria-label="Descrição da pasta"
                                                             prop:value=folder_description.clone()
-                                                            on:change=move |ev| {
+                                                            on:change={
+                                                                let notes_id = notes_id.clone();
+                                                                move |ev| {
                                                                 let value = event_target_value(&ev);
                                                                 let mut current = skill_items();
                                                                 if let Some(folder) = current.iter_mut().find(|item| item.name == folder_name_for_description) {
                                                                     folder.description = value;
                                                                     save_skill_items(current);
                                                                 }
-                                                            }
+                                                            }}
                                                         ></textarea>
                                                     }.into_any()
                                                 }
@@ -1352,7 +1354,9 @@ fn SheetApp(
                                                         <span>"Condição"</span>
                                                         <select
                                                             prop:value=participant.condition_name.clone()
-                                                            on:change=move |ev| {
+                                                            on:change={
+                                                                let condition_id = condition_id.clone();
+                                                                move |ev| {
                                                                 let selected = event_target_value(&ev);
                                                                 let description = conditions_library.get().into_iter()
                                                                     .find(|item| item.name == selected)
