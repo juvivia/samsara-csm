@@ -289,6 +289,23 @@ fn decode_skill_description(description: &str) -> String {
     description.replace("\\n", "\n")
 }
 
+fn persist_combat_state(
+    session: auth::AuthSession,
+    state: cloud::CombatState,
+    state_signal: RwSignal<Option<cloud::CombatState>>,
+    error_signal: RwSignal<String>,
+) {
+    spawn_local(async move {
+        match cloud::save_combat_state(&session, &state).await {
+            Ok(()) => {
+                state_signal.set(Some(state));
+                error_signal.set(String::new());
+            }
+            Err(error) => error_signal.set(error),
+        }
+    });
+}
+
 #[component]
 fn SheetApp(
     initial_sheet: Sheet,
@@ -337,7 +354,7 @@ fn SheetApp(
         }
     });
 
-    if let Some(path) = initial_portrait_path {
+    if let Some(path) = initial_portrait_path.clone() {
         let current_session = session.get();
         spawn_local(async move {
             match cloud::portrait_signed_url(&current_session, &path).await {
@@ -1051,6 +1068,155 @@ fn SheetApp(
                         </div>
                     </section>
                 </Show>
+                <Show when=move || tab.get() == 4 && master_mode.get() && is_master>
+                    <section class="turns-dashboard">
+                        <h2>"Turnos"</h2>
+                        <Show when=move || !combat_error.get().is_empty()>
+                            <p class="auth-error">{move || combat_error.get()}</p>
+                        </Show>
+                        <Show when=move || !combat_state.get().as_ref().map(|state| state.is_active).unwrap_or(false)>
+                            <p class="hint">"Organize a ordem de ação dos personagens durante o combate."</p>
+                            <button type="button" class="resource-edit" on:click=move |_| {
+                                combat_setup_open.set(true);
+                                combat_selected.set(Vec::new());
+                                load_master_roster();
+                            }>"Iniciar combate"</button>
+                            <Show when=move || combat_setup_open.get()>
+                                <div class="combat-setup">
+                                    <h3>"Participantes"</h3>
+                                    <p class="hint">"Selecione as fichas que participarão deste combate."</p>
+                                    {move || master_characters.get().into_iter().map(|(character, _)| {
+                                        let id = character.id.clone();
+                                        let label = character.name.clone();
+                                        view! {
+                                            <label class="combat-select-row">
+                                                <input type="checkbox"
+                                                    prop:checked=move || combat_selected.get().contains(&id)
+                                                    on:change=move |ev| {
+                                                        let checked = ev.target().and_then(|target| target.dyn_into::<web_sys::HtmlInputElement>().ok()).map(|input| input.checked()).unwrap_or(false);
+                                                        combat_selected.update(|items| {
+                                                            if checked {
+                                                                if !items.contains(&id) { items.push(id.clone()); }
+                                                            } else {
+                                                                items.retain(|item| item != &id);
+                                                            }
+                                                        });
+                                                    }
+                                                />
+                                                <span>{label}</span>
+                                            </label>
+                                        }
+                                    }).collect_view()}
+                                    <div class="combat-actions">
+                                        <button type="button" class="resource-edit" on:click=move |_| {
+                                            let selected_ids = combat_selected.get();
+                                            let participants: Vec<cloud::CombatParticipant> = master_characters.get().into_iter()
+                                                .filter(|(character, _)| selected_ids.contains(&character.id))
+                                                .map(|(character, _)| cloud::CombatParticipant {
+                                                    character_id: character.id,
+                                                    name: character.name,
+                                                    user_id: character.user_id,
+                                                }).collect();
+                                            if participants.is_empty() {
+                                                combat_error.set("Selecione pelo menos um personagem.".to_string());
+                                                return;
+                                            }
+                                            let mut user_ids: Vec<String> = participants.iter().map(|p| p.user_id.clone()).collect();
+                                            user_ids.sort();
+                                            user_ids.dedup();
+                                            let state = cloud::CombatState {
+                                                id: 1,
+                                                is_active: true,
+                                                participant_user_ids: user_ids,
+                                                turn_order: participants,
+                                                current_index: 0,
+                                                round: 1,
+                                            };
+                                            persist_combat_state(session.get(), state, combat_state.clone(), combat_error.clone());
+                                            combat_setup_open.set(false);
+                                            combat_error.set(String::new());
+                                        }>"Começar combate"</button>
+                                        <button type="button" class="resource-edit" on:click=move |_| combat_setup_open.set(false)>"Cancelar"</button>
+                                    </div>
+                                </div>
+                            </Show>
+                        </Show>
+                        <Show when=move || combat_state.get().as_ref().map(|state| state.is_active).unwrap_or(false)>
+                            <div class="combat-current-turn">
+                                <span>"Turno atual"</span>
+                                <strong>{move || combat_state.get().and_then(|state| state.turn_order.get(state.current_index).map(|p| p.name.clone())).unwrap_or_else(|| "—".to_string())}</strong>
+                                <small>{move || format!("Rodada {}", combat_state.get().map(|state| state.round).unwrap_or(1))}</small>
+                            </div>
+                            <h3>"Ordem de ação"</h3>
+                            <p class="hint">"Arraste os personagens para reorganizar a ordem. A alteração é sincronizada com os jogadores."</p>
+                            <ol class="turn-order-list">
+                                {move || combat_state.get().map(|state| state.turn_order.iter().enumerate().map(|(index, participant)| {
+                                    let id = participant.character_id.clone();
+                                    let drag_id = id.clone();
+                                    let drop_id = id.clone();
+                                    let is_current = index == state.current_index;
+                                    view! {
+                                        <li class:current-turn=is_current draggable="true"
+                                            on:dragstart=move |ev: web_sys::DragEvent| {
+                                                if let Some(data) = ev.data_transfer() {
+                                                    let _ = data.set_data("text/plain", &drag_id);
+                                                    data.set_effect_allowed("move");
+                                                }
+                                            }
+                                            on:dragover=|ev: web_sys::DragEvent| ev.prevent_default()
+                                            on:drop=move |ev: web_sys::DragEvent| {
+                                                ev.prevent_default();
+                                                let source = ev.data_transfer().and_then(|data| data.get_data("text/plain").ok()).unwrap_or_default();
+                                                let Some(mut next) = combat_state.get_untracked() else { return; };
+                                                let active_id = next.turn_order.get(next.current_index).map(|p| p.character_id.clone());
+                                                if let (Some(from), Some(to)) = (
+                                                    next.turn_order.iter().position(|p| p.character_id == source),
+                                                    next.turn_order.iter().position(|p| p.character_id == drop_id)
+                                                ) {
+                                                    let moved = next.turn_order.remove(from);
+                                                    next.turn_order.insert(to, moved);
+                                                    next.current_index = active_id.and_then(|active| next.turn_order.iter().position(|p| p.character_id == active)).unwrap_or(0);
+                                                    persist_combat_state(session.get(), next, combat_state.clone(), combat_error.clone());
+                                                }
+                                            }
+                                        >
+                                            <span class="turn-drag-handle">"⠿"</span>
+                                            <span class="turn-position">{index + 1}</span>
+                                            <span>{participant.name.clone()}</span>
+                                            {if is_current { view! { <small>"Em ação"</small> }.into_any() } else { view! { <span></span> }.into_any() }}
+                                        </li>
+                                    }
+                                }).collect_view()).unwrap_or_default()}
+                            </ol>
+                            <div class="combat-actions">
+                                <button type="button" class="resource-edit" on:click=move |_| {
+                                    if let Some(mut next) = combat_state.get_untracked() {
+                                        if !next.turn_order.is_empty() {
+                                            next.current_index += 1;
+                                            if next.current_index >= next.turn_order.len() {
+                                                next.current_index = 0;
+                                                next.round += 1;
+                                            }
+                                            persist_combat_state(session.get(), next, combat_state.clone(), combat_error.clone());
+                                        }
+                                    }
+                                }>"Avançar turno"</button>
+                                <button type="button" class="danger" on:click=move |_| {
+                                    if let Some(mut next) = combat_state.get_untracked() {
+                                        next.is_active = false;
+                                        next.participant_user_ids.clear();
+                                        next.turn_order.clear();
+                                        next.current_index = 0;
+                                        next.round = 1;
+                                        persist_combat_state(session.get(), next, combat_state.clone(), combat_error.clone());
+                                    }
+                                    combat_setup_open.set(false);
+                                }>"Encerrar combate"</button>
+                            </div>
+                        </Show>
+                    </section>
+                </Show>
+
                 <Show when=move || tab.get() == 0 && !master_mode.get()>
                     <div class="character-profile-layout">
                         <div class="portrait-card">
@@ -1333,6 +1499,17 @@ fn SheetApp(
                     <inventory::Inventory sheet=sheet />
                 </Show>
             </section>
+
+            <Show when=move || turn_popup_open.get() && !master_mode.get()>
+                <div class="turn-notification-backdrop" role="dialog" aria-modal="true" aria-label="Aviso de turno">
+                    <div class="turn-notification">
+                        <span>"SAMSARA"</span>
+                        <h2>"É a sua vez!"</h2>
+                        <p>"Seu personagem está na vez de agir."</p>
+                        <button type="button" on:click=move |_| turn_popup_open.set(false)>"Entendi"</button>
+                    </div>
+                </div>
+            </Show>
 
             <div class="theme-controls">
                 <Show when=move || theme_picker_open.get()>
