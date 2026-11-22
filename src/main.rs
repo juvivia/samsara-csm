@@ -389,6 +389,23 @@ fn SheetApp(
         });
     };
 
+    let restore_own_sheet = move || {
+        if viewing_as_master.get_untracked() {
+            sheet.set(own_sheet.get_value());
+            character_id.set(own_character_id.get_value());
+            portrait_url.set(None);
+            if let Some(path) = initial_portrait_path.clone() {
+                let current_session = session.get();
+                spawn_local(async move {
+                    if let Ok(url) = cloud::portrait_signed_url(&current_session, &path).await {
+                        portrait_url.set(Some(url));
+                    }
+                });
+            }
+        }
+        viewing_as_master.set(false);
+    };
+
     let persist_combat = move |state: cloud::CombatState| {
         let current_session = session.get();
         let state_signal = combat_state.clone();
@@ -935,8 +952,8 @@ fn SheetApp(
                     <button type="button" class="mode-toggle" class:mode-toggle-active=move || master_mode.get()
                         on:click=move |_| {
                             if !master_mode.get() {
+                                restore_own_sheet();
                                 master_mode.set(true);
-                                viewing_as_master.set(false);
                                 resource_editing.set(false);
                                 tab.set(3);
                                 load_master_roster();
@@ -948,20 +965,7 @@ fn SheetApp(
                                     }
                                 });
                             } else {
-                                if viewing_as_master.get() {
-                                    sheet.set(own_sheet.get_value());
-                                    character_id.set(own_character_id.get_value());
-                                    portrait_url.set(None);
-                                    if let Some(path) = initial_portrait_path.clone() {
-                                        let current_session = session.get();
-                                        spawn_local(async move {
-                                            if let Ok(url) = cloud::portrait_signed_url(&current_session, &path).await {
-                                                portrait_url.set(Some(url));
-                                            }
-                                        });
-                                    }
-                                    viewing_as_master.set(false);
-                                }
+                                restore_own_sheet();
                                 master_mode.set(false);
                                 tab.set(0);
                                 resource_editing.set(false);
@@ -1087,18 +1091,20 @@ fn SheetApp(
                                     <p class="hint">"Selecione as fichas que participarão deste combate."</p>
                                     {move || master_characters.get().into_iter().map(|(character, _)| {
                                         let id = character.id.clone();
+                                        let checked_id = id.clone();
+                                        let change_id = id.clone();
                                         let label = character.name.clone();
                                         view! {
                                             <label class="combat-select-row">
                                                 <input type="checkbox"
-                                                    prop:checked=move || combat_selected.get().contains(&id)
+                                                    prop:checked=move || combat_selected.get().contains(&checked_id)
                                                     on:change=move |ev| {
                                                         let checked = ev.target().and_then(|target| target.dyn_into::<web_sys::HtmlInputElement>().ok()).map(|input| input.checked()).unwrap_or(false);
                                                         combat_selected.update(|items| {
                                                             if checked {
-                                                                if !items.contains(&id) { items.push(id.clone()); }
+                                                                if !items.contains(&change_id) { items.push(change_id.clone()); }
                                                             } else {
-                                                                items.retain(|item| item != &id);
+                                                                items.retain(|item| item != &change_id);
                                                             }
                                                         });
                                                     }
@@ -1579,7 +1585,7 @@ fn SheetApp(
 
                     <Show when=move || viewing_as_master.get()>
                         <button type="button" class="resource-edit" on:click=move |_| {
-                            viewing_as_master.set(false);
+                            restore_own_sheet();
                             master_mode.set(true);
                             tab.set(3);
                             load_master_roster();
