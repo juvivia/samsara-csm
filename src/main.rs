@@ -316,6 +316,7 @@ fn SheetApp(
     let initial_portrait_path = initial_sheet.portrait_path.clone();
     let own_sheet = StoredValue::new(initial_sheet.clone());
     let own_character_id = StoredValue::new(character_id.clone());
+    let own_portrait_path = StoredValue::new(initial_portrait_path.clone());
     let sheet = RwSignal::new(initial_sheet);
     // Handles Copy evitam que closures internas do view! movam dados não-Copy.
     let session = RwSignal::new(session);
@@ -354,7 +355,7 @@ fn SheetApp(
         }
     });
 
-    if let Some(path) = initial_portrait_path.clone() {
+    if let Some(path) = own_portrait_path.get_value() {
         let current_session = session.get();
         spawn_local(async move {
             match cloud::portrait_signed_url(&current_session, &path).await {
@@ -462,12 +463,14 @@ fn SheetApp(
             poll_callback.as_ref().unchecked_ref(), 2500
         ).ok()
     });
-    on_cleanup(move || {
-        if let (Some(window), Some(interval)) = (poll_window, poll_interval) {
-            window.clear_interval_with_handle(interval);
-        }
-        drop(poll_callback);
-    });
+    if let Some(interval) = poll_interval {
+        on_cleanup(move || {
+            if let Some(window) = web_sys::window() {
+                window.clear_interval_with_handle(interval);
+            }
+        });
+    }
+    poll_callback.forget();
 
     let skill_items = move || load_skill_items(&sheet.get().abilities);
 
