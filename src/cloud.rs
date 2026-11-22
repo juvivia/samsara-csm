@@ -110,12 +110,38 @@ pub struct CombatSheetCard {
     pub name: String,
     pub stats: [i32; 5],
     pub pv: i32,
+    pub pv_max: i32,
     pub pm: i32,
+    pub pm_max: i32,
+}
+
+
+pub async fn load_master_notes(session: &AuthSession) -> Result<String, String> {
+    if session.user.id != MASTER_UID { return Err("Acesso restrito à conta Mestre.".into()); }
+    let url=format!("{}/rest/v1/samsara_master_settings?select=notes&id=eq.1",SUPABASE_URL);
+    let response=Request::get(&url).header("apikey",SUPABASE_KEY)
+        .header("Authorization",&format!("Bearer {}",session.access_token))
+        .send().await.map_err(|e|e.to_string())?;
+    if !response.ok() { let status=response.status(); let body=response.text().await.unwrap_or_default(); return Err(format!("Erro ao carregar anotações ({}): {}",status,body)); }
+    let rows: Vec<serde_json::Value>=response.json().await.map_err(|e|e.to_string())?;
+    Ok(rows.first().and_then(|row|row.get("notes")).and_then(|v|v.as_str()).unwrap_or("").to_string())
+}
+
+pub async fn save_master_notes(session: &AuthSession, notes: &str) -> Result<(), String> {
+    if session.user.id != MASTER_UID { return Err("Acesso restrito à conta Mestre.".into()); }
+    let url=format!("{}/rest/v1/samsara_master_settings?id=eq.1",SUPABASE_URL);
+    let body=serde_json::json!({"id":1,"notes":notes});
+    let response=Request::post(&url).header("apikey",SUPABASE_KEY)
+        .header("Authorization",&format!("Bearer {}",session.access_token))
+        .header("Content-Type","application/json").header("Prefer","resolution=merge-duplicates,return=minimal")
+        .json(&body).map_err(|e|e.to_string())?.send().await.map_err(|e|e.to_string())?;
+    if !response.ok() { let status=response.status(); let body=response.text().await.unwrap_or_default(); return Err(format!("Erro ao salvar anotações ({}): {}",status,body)); }
+    Ok(())
 }
 
 pub async fn list_combat_cards(session: &AuthSession) -> Result<Vec<CombatSheetCard>, String> {
     if session.user.id != MASTER_UID { return Err("Acesso restrito à conta Mestre.".into()); }
-    let url = format!("{}/rest/v1/samsara_combat_cards?select=id,name,stats,pv,pm&order=created_at.asc", SUPABASE_URL);
+    let url = format!("{}/rest/v1/samsara_combat_cards?select=id,name,stats,pv,pv_max,pm,pm_max&order=created_at.asc", SUPABASE_URL);
     let response = Request::get(&url)
         .header("apikey", SUPABASE_KEY)
         .header("Authorization", &format!("Bearer {}", session.access_token))
@@ -130,7 +156,7 @@ pub async fn list_combat_cards(session: &AuthSession) -> Result<Vec<CombatSheetC
 
 pub async fn create_combat_card(session: &AuthSession, card: &CombatSheetCard) -> Result<CombatSheetCard, String> {
     if session.user.id != MASTER_UID { return Err("Acesso restrito à conta Mestre.".into()); }
-    let body = serde_json::json!({"name":card.name,"stats":card.stats,"pv":card.pv,"pm":card.pm});
+    let body = serde_json::json!({"name":card.name,"stats":card.stats,"pv":card.pv,"pv_max":card.pv_max,"pm":card.pm,"pm_max":card.pm_max});
     let url = format!("{}/rest/v1/samsara_combat_cards", SUPABASE_URL);
     let response = Request::post(&url)
         .header("apikey", SUPABASE_KEY)
