@@ -707,3 +707,170 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     .topbar .site-logo { width: 170px; }
     .auth-card .site-logo { width: min(250px, 100%); }
 }
+
+
+/* Alternância de interface e controle de combate */
+.topbar {
+    flex-wrap: wrap;
+}
+.mode-toggle {
+    border: 1px solid var(--theme-c-536b60);
+    border-radius: 8px;
+    padding: 9px 13px;
+    background: var(--theme-c-171d21);
+    color: var(--theme-c-b4d1c2);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.mode-toggle:hover,
+.mode-toggle-active {
+    background: var(--theme-c-202c27);
+    border-color: var(--theme-c-b4d1c2);
+}
+.turns-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.turns-dashboard > h2,
+.turns-dashboard h3 {
+    margin: 0;
+}
+.combat-setup {
+    display: grid;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 16px;
+    border: 1px solid var(--theme-c-364148);
+    border-radius: 9px;
+    background: var(--theme-c-171d21);
+}
+.combat-select-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border: 1px solid var(--theme-c-30383e);
+    border-radius: 7px;
+    color: var(--theme-c-e8eeee);
+    cursor: pointer;
+}
+.combat-select-row input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--theme-c-b4d1c2);
+}
+.combat-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 8px;
+}
+.combat-current-turn {
+    display: grid;
+    gap: 5px;
+    padding: 16px;
+    border: 1px solid var(--theme-c-536b60);
+    border-radius: 9px;
+    background: var(--theme-c-202c27);
+}
+.combat-current-turn span,
+.combat-current-turn small {
+    color: var(--theme-c-859098);
+    font-size: 11px;
+}
+.combat-current-turn strong {
+    color: var(--theme-c-b4d1c2);
+    font-size: 22px;
+}
+.turn-order-list {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.turn-order-list li {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-height: 46px;
+    padding: 9px 12px;
+    border: 1px solid var(--theme-c-364148);
+    border-radius: 8px;
+    background: var(--theme-c-171d21);
+    color: var(--theme-c-e8eeee);
+    cursor: grab;
+}
+.turn-order-list li:active { cursor: grabbing; }
+.turn-order-list li.current-turn {
+    border-color: var(--theme-c-b4d1c2);
+    background: var(--theme-c-202c27);
+}
+.turn-drag-handle { color: var(--theme-c-859098); font-size: 18px; }
+.turn-position {
+    display: grid;
+    place-items: center;
+    width: 23px;
+    height: 23px;
+    border-radius: 50%;
+    background: var(--theme-c-30383e);
+    font-size: 11px;
+}
+.turn-order-list li small {
+    margin-left: auto;
+    color: var(--theme-c-b4d1c2);
+    font-size: 10px;
+    font-weight: 700;
+}
+.turn-notification-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, .68);
+    backdrop-filter: blur(7px);
+}
+.turn-notification {
+    width: min(420px, 100%);
+    padding: 30px 24px;
+    border: 1px solid var(--theme-c-b4d1c2);
+    border-radius: 14px;
+    background: var(--theme-c-171d21);
+    box-shadow: 0 18px 70px rgba(0,0,0,.5);
+    text-align: center;
+}
+.turn-notification > span {
+    color: var(--theme-c-b4d1c2);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .18em;
+}
+.turn-notification h2 {
+    margin: 12px 0 8px;
+    color: var(--theme-c-e8eeee);
+    font-size: 25px;
+}
+.turn-notification p {
+    margin: 0 0 20px;
+    color: var(--theme-c-859098);
+    font-size: 13px;
+}
+.turn-notification button {
+    border: 0;
+    border-radius: 7px;
+    padding: 10px 22px;
+    background: var(--theme-c-b4d1c2);
+    color: var(--theme-c-17251e);
+    font-weight: 700;
+    cursor: pointer;
+}
+@media (max-width: 540px) {
+    .mode-toggle { width: 100%; }
+    .combat-actions { flex-direction: column; }
+    .combat-actions button { width: 100%; }
+}
