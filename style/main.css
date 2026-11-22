@@ -1035,3 +1035,30 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     .turn-condition-item { flex-direction: column; }
     .turn-condition-remove { align-self: flex-end; }
 }
+
+/* Ajustes da interface compacta das fichas de combate do Mestre */
+.combat-add-button { justify-self:start; min-width:120px; }
+.combat-card-editor { max-width:720px; }
+.combat-card-title-input {
+    width:100%; box-sizing:border-box; padding:8px 9px;
+    border:1px solid var(--theme-c-364148); border-radius:6px;
+    background:var(--theme-c-14191d); color:var(--theme-c-e8eeee);
+    font:inherit; font-size:16px; font-weight:700;
+}
+.combat-mini-stats label { display:grid; gap:4px; min-width:0; text-align:center; }
+.combat-mini-stats label input {
+    width:100%; min-width:0; box-sizing:border-box; padding:7px 2px;
+    border:1px solid var(--theme-c-364148); border-radius:5px;
+    background:var(--theme-c-14191d); color:var(--theme-c-e8eeee);
+    text-align:center; font:inherit;
+}
+.combat-resource-edit { display:grid; gap:7px; }
+.combat-resource-edit > strong { color:var(--theme-c-b4d1c2); font-size:12px; }
+.combat-resource-edit .resource-control { min-width:0; }
+.combat-resource-edit .resource-meter { min-width:0; flex:1; }
+.combat-resource-max {
+    width:42px; min-width:35px; padding:2px 3px; border:0;
+    border-bottom:1px solid var(--theme-c-536b60); background:transparent;
+    color:var(--theme-c-e8eeee); text-align:center; font:inherit; font-size:11px;
+}
+.combat-mini-card > .danger { justify-self:end; }
