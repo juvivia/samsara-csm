@@ -913,8 +913,7 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     background: rgba(0,0,0,.12);
     cursor: default;
 }
-.turn-player-details label,
-.condition-create-form label {
+.turn-player-details label {
     display: grid;
     gap: 6px;
     color: var(--theme-c-b4d1c2);
@@ -922,9 +921,7 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     font-weight: 600;
 }
 .turn-player-details textarea,
-.turn-player-details select,
-.condition-create-form input,
-.condition-create-form textarea {
+.turn-player-details select {
     width: 100%;
     box-sizing: border-box;
     padding: 10px;
@@ -948,22 +945,31 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     margin-bottom: 4px;
     color: var(--theme-c-b4d1c2);
 }
-.conditions-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 12px;
-}
+.conditions-heading { margin-bottom: 12px; }
 .conditions-heading h2 { margin: 0; }
-.condition-create-form {
-    display: grid;
-    gap: 12px;
-    margin-bottom: 14px;
-    padding: 14px;
+.turn-assigned-conditions { display: grid; gap: 8px; }
+.turn-condition-list { display: grid; gap: 8px; }
+.turn-condition-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
     border: 1px solid var(--theme-c-364148);
-    border-radius: 8px;
-    background: var(--theme-c-171d21);
+    border-radius: 7px;
+    background: rgba(0,0,0,.12);
+}
+.turn-condition-item .turn-condition-preview { flex: 1; }
+.turn-condition-preview span { display: block; white-space: pre-wrap; }
+.turn-condition-remove {
+    flex: 0 0 auto;
+    border: 1px solid var(--theme-c-536b60);
+    border-radius: 6px;
+    padding: 6px 9px;
+    background: transparent;
+    color: var(--theme-c-b4d1c2);
+    cursor: pointer;
+    font: inherit;
+    font-size: 11px;
 }
 .turn-popup-condition,
 .turn-popup-notes {
@@ -988,6 +994,6 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     white-space: pre-wrap;
 }
 @media (max-width: 540px) {
-    .conditions-heading { align-items: flex-start; flex-direction: column; }
-    .conditions-heading button { width: 100%; }
+    .turn-condition-item { flex-direction: column; }
+    .turn-condition-remove { align-self: flex-end; }
 }
