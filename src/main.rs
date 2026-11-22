@@ -1593,6 +1593,38 @@ fn SheetApp(
                                             on:input=move |ev| { if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_card_stats.update(|stats| stats[index]=v); } } /></label>
                                     }).collect_view()}
                                 </div>
+                                <div class="combat-card-form-resources">
+                                    <div class="combat-resource-edit">
+                                        <strong>"PV"</strong>
+                                        <div class="resource-control" class:resource-overflow=move || combat_card_pv_max.get()>0 && combat_card_pv.get()>combat_card_pv_max.get()>
+                                            <button type="button" aria-label="Diminuir PV em 5" on:click=move |_| combat_card_pv.update(|v| *v=(*v-5).max(0))>"≪"</button>
+                                            <button type="button" aria-label="Diminuir PV" on:click=move |_| combat_card_pv.update(|v| *v=(*v-1).max(0))>"‹"</button>
+                                            <div class="resource-meter">
+                                                <div class="resource-meter-fill" style:width=move || { let max=combat_card_pv_max.get(); let current=combat_card_pv.get(); format!("{}%",if max>0 { current.max(0).min(max) as f64/max as f64*100.0 } else { 0.0 }) }></div>
+                                                <span>{move || combat_card_pv.get().to_string()}</span><span class="resource-value-separator">"/"</span>
+                                                <input class="combat-resource-max" type="number" min="0" aria-label="PV máximo" prop:value=move || combat_card_pv_max.get().to_string()
+                                                    on:input=move |ev| { if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_card_pv_max.set(v.max(0)); } } />
+                                            </div>
+                                            <button type="button" aria-label="Aumentar PV" on:click=move |_| combat_card_pv.update(|v| *v=v.saturating_add(1))>"›"</button>
+                                            <button type="button" aria-label="Aumentar PV em 5" on:click=move |_| combat_card_pv.update(|v| *v=v.saturating_add(5))>"≫"</button>
+                                        </div>
+                                    </div>
+                                    <div class="combat-resource-edit">
+                                        <strong>"PM"</strong>
+                                        <div class="resource-control" class:resource-overflow=move || combat_card_pm_max.get()>0 && combat_card_pm.get()>combat_card_pm_max.get()>
+                                            <button type="button" aria-label="Diminuir PM em 5" on:click=move |_| combat_card_pm.update(|v| *v=(*v-5).max(0))>"≪"</button>
+                                            <button type="button" aria-label="Diminuir PM" on:click=move |_| combat_card_pm.update(|v| *v=(*v-1).max(0))>"‹"</button>
+                                            <div class="resource-meter">
+                                                <div class="resource-meter-fill" style:width=move || { let max=combat_card_pm_max.get(); let current=combat_card_pm.get(); format!("{}%",if max>0 { current.max(0).min(max) as f64/max as f64*100.0 } else { 0.0 }) }></div>
+                                                <span>{move || combat_card_pm.get().to_string()}</span><span class="resource-value-separator">"/"</span>
+                                                <input class="combat-resource-max" type="number" min="0" aria-label="PM máximo" prop:value=move || combat_card_pm_max.get().to_string()
+                                                    on:input=move |ev| { if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_card_pm_max.set(v.max(0)); } } />
+                                            </div>
+                                            <button type="button" aria-label="Aumentar PM" on:click=move |_| combat_card_pm.update(|v| *v=v.saturating_add(1))>"›"</button>
+                                            <button type="button" aria-label="Aumentar PM em 5" on:click=move |_| combat_card_pm.update(|v| *v=v.saturating_add(5))>"≫"</button>
+                                        </div>
+                                    </div>
+                                </div>
                                 <button type="submit">"Criar ficha"</button>
                             </form>
                         </Show>
@@ -1614,7 +1646,8 @@ fn SheetApp(
                                         </div>
                                         <div class="combat-resource-edit">
                                             <strong>"PV"</strong>
-                                            <div class="resource-control" class:resource-low=move || combat_cards.get().get(idx).map(|c| c.pv_max>0 && c.pv<=c.pv_max/4).unwrap_or(false)>
+                                            <div class="resource-control" class:resource-low=move || combat_cards.get().get(idx).map(|c| c.pv_max>0 && c.pv<=c.pv_max/4).unwrap_or(false)
+                                                class:resource-overflow=move || combat_cards.get().get(idx).map(|c| c.pv_max>0 && c.pv>c.pv_max).unwrap_or(false)>
                                                 <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pv=(c.pv-5).max(0); })>"≪"</button>
                                                 <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pv=(c.pv-1).max(0); })>"‹"</button>
                                                 <div class="resource-meter">
@@ -1627,7 +1660,8 @@ fn SheetApp(
                                                 <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pv=c.pv.saturating_add(5); })>"≫"</button>
                                             </div>
                                             <strong>"PM"</strong>
-                                            <div class="resource-control" class:resource-low=move || combat_cards.get().get(idx).map(|c| c.pm_max>0 && c.pm<=c.pm_max/4).unwrap_or(false)>
+                                            <div class="resource-control" class:resource-low=move || combat_cards.get().get(idx).map(|c| c.pm_max>0 && c.pm<=c.pm_max/4).unwrap_or(false)
+                                                class:resource-overflow=move || combat_cards.get().get(idx).map(|c| c.pm_max>0 && c.pm>c.pm_max).unwrap_or(false)>
                                                 <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pm=(c.pm-5).max(0); })>"≪"</button>
                                                 <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pm=(c.pm-1).max(0); })>"‹"</button>
                                                 <div class="resource-meter">
