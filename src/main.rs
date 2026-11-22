@@ -1337,7 +1337,7 @@ fn SheetApp(
                                                             on:change=move |ev| {
                                                                 let value = event_target_value(&ev);
                                                                 if let Some(mut next) = combat_state.get_untracked() {
-                                                                    if let Some(target) = next.turn_order.iter_mut().find(|p| p.character_id == notes_id) {
+                                                                    if let Some(target) = next.turn_order.iter_mut().find(|p| p.character_id.as_str() == notes_id.as_str()) {
                                                                         target.notes = value;
                                                                     }
                                                                     persist_combat_state(session.get(), next, combat_state.clone(), combat_error.clone());
@@ -1355,7 +1355,7 @@ fn SheetApp(
                                                                     .find(|item| item.name == selected)
                                                                     .map(|item| item.description).unwrap_or_default();
                                                                 if let Some(mut next) = combat_state.get_untracked() {
-                                                                    if let Some(target) = next.turn_order.iter_mut().find(|p| p.character_id == condition_id) {
+                                                                    if let Some(target) = next.turn_order.iter_mut().find(|p| p.character_id.as_str() == condition_id.as_str()) {
                                                                         target.condition_name = selected;
                                                                         target.condition_description = description;
                                                                     }
