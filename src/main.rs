@@ -432,16 +432,16 @@ fn SheetApp(
         spawn_local(async move {
             let result = async {
                 cloud::save_master_notes(&current_session, &notes).await?;
+                let mut saved_cards = Vec::new();
                 for card in cards {
                     if card.id.is_empty() {
-                        let saved = cloud::create_combat_card(&current_session, &card).await?;
-                        combat_cards.update(|items| {
-                            if let Some(item) = items.iter_mut().find(|item| item.id.is_empty() && item.name == card.name) { *item = saved; }
-                        });
+                        saved_cards.push(cloud::create_combat_card(&current_session, &card).await?);
                     } else {
                         cloud::update_combat_card(&current_session, &card).await?;
+                        saved_cards.push(card);
                     }
                 }
+                combat_cards.set(saved_cards);
                 Ok::<(), String>(())
             }.await;
             match result {
