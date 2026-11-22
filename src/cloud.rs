@@ -28,6 +28,12 @@ pub struct CombatParticipant {
     pub character_id: String,
     pub name: String,
     pub user_id: String,
+    #[serde(default)]
+    pub notes: String,
+    #[serde(default)]
+    pub condition_name: String,
+    #[serde(default)]
+    pub condition_description: String,
 }
 
 /// Estado único do combate ativo da campanha.
