@@ -1036,6 +1036,21 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     .turn-condition-remove { align-self: flex-end; }
 }
 
+/* Barras de PV/PM das fichas de combate: preenchimento sempre visível. */
+.combat-resource-edit .resource-meter-fill,
+.combat-card-form-resources .resource-meter-fill {
+    background: var(--theme-c-b4d1c2);
+}
+.combat-card-form-resources {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+.combat-card-form-resources .combat-resource-edit { min-width: 0; }
+@media(max-width:540px) {
+    .combat-card-form-resources { grid-template-columns: 1fr; }
+}
+
 /* Ajustes da interface compacta das fichas de combate do Mestre */
 .combat-add-button { justify-self:start; min-width:120px; }
 .combat-card-editor { max-width:720px; }
