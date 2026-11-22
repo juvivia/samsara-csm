@@ -1596,7 +1596,7 @@ fn SheetApp(
                                 <div class="combat-card-form-resources">
                                     <div class="combat-resource-edit">
                                         <strong>"PV"</strong>
-                                        <div class="resource-control" style:border-color=move || if combat_card_pv_max.get()>0 && combat_card_pv.get()>combat_card_pv_max.get() { "var(--theme-c-b4d1c2)" } else { "var(--theme-c-536b60)" } style:box-shadow=move || if combat_card_pv_max.get()>0 && combat_card_pv.get()>combat_card_pv_max.get() { "0 0 10px var(--theme-c-b4d1c2)" } else { "none" }>
+                                        <div class="resource-control">
                                             <button type="button" aria-label="Diminuir PV em 5" on:click=move |_| combat_card_pv.update(|v| *v=(*v-5).max(0))>"≪"</button>
                                             <button type="button" aria-label="Diminuir PV" on:click=move |_| combat_card_pv.update(|v| *v=(*v-1).max(0))>"‹"</button>
                                             <div class="resource-meter">
@@ -1611,7 +1611,7 @@ fn SheetApp(
                                     </div>
                                     <div class="combat-resource-edit">
                                         <strong>"PM"</strong>
-                                        <div class="resource-control" style:border-color=move || if combat_card_pm_max.get()>0 && combat_card_pm.get()>combat_card_pm_max.get() { "var(--theme-c-b4d1c2)" } else { "var(--theme-c-536b60)" } style:box-shadow=move || if combat_card_pm_max.get()>0 && combat_card_pm.get()>combat_card_pm_max.get() { "0 0 10px var(--theme-c-b4d1c2)" } else { "none" }>
+                                        <div class="resource-control">
                                             <button type="button" aria-label="Diminuir PM em 5" on:click=move |_| combat_card_pm.update(|v| *v=(*v-5).max(0))>"≪"</button>
                                             <button type="button" aria-label="Diminuir PM" on:click=move |_| combat_card_pm.update(|v| *v=(*v-1).max(0))>"‹"</button>
                                             <div class="resource-meter">
