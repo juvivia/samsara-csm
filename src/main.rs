@@ -1590,7 +1590,7 @@ fn SheetApp(
                                 <div class="combat-card-stats">
                                     {["INT","FIS","DOM","VEL","HAB"].into_iter().enumerate().map(|(index,label)| view! {
                                         <label>{label}<input type="number" prop:value=move || combat_card_stats.get()[index].to_string()
-                                            on:input=move |ev| if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_card_stats.update(|stats| stats[index]=v); } /></label>
+                                            on:input=move |ev| { if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_card_stats.update(|stats| stats[index]=v); } } /></label>
                                     }).collect_view()}
                                 </div>
                                 <button type="submit">"Criar ficha"</button>
@@ -1609,7 +1609,7 @@ fn SheetApp(
                                             {["INT","FIS","DOM","VEL","HAB"].into_iter().enumerate().map(move |(stat_idx,label)| view! {
                                                 <label><strong>{label}</strong><input type="number" aria-label=label
                                                     prop:value=move || combat_cards.get().get(idx).map(|c| c.stats[stat_idx].to_string()).unwrap_or_default()
-                                                    on:input=move |ev| if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.stats[stat_idx]=v; }); } /></label>
+                                                    on:input=move |ev| { if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.stats[stat_idx]=v; }); } } /></label>
                                             }).collect_view()}
                                         </div>
                                         <div class="combat-resource-edit">
@@ -1621,7 +1621,7 @@ fn SheetApp(
                                                     <div class="resource-meter-fill" style:width=move || combat_cards.get().get(idx).map(|c| format!("{}%",if c.pv_max>0 {c.pv.max(0).min(c.pv_max) as f64/c.pv_max as f64*100.0} else {0.0})).unwrap_or_default()></div>
                                                     <span>{move || combat_cards.get().get(idx).map(|c| c.pv.to_string()).unwrap_or_default()}</span><span class="resource-value-separator">"/"</span>
                                                     <input class="combat-resource-max" type="number" min="0" aria-label="PV máximo" prop:value=move || combat_cards.get().get(idx).map(|c| c.pv_max.to_string()).unwrap_or_default()
-                                                        on:input=move |ev| if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pv_max=v.max(0); }); } />
+                                                        on:input=move |ev| { if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pv_max=v.max(0); }); } } />
                                                 </div>
                                                 <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pv=c.pv.saturating_add(1); })>"›"</button>
                                                 <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pv=c.pv.saturating_add(5); })>"≫"</button>
@@ -1634,7 +1634,7 @@ fn SheetApp(
                                                     <div class="resource-meter-fill" style:width=move || combat_cards.get().get(idx).map(|c| format!("{}%",if c.pm_max>0 {c.pm.max(0).min(c.pm_max) as f64/c.pm_max as f64*100.0} else {0.0})).unwrap_or_default()></div>
                                                     <span>{move || combat_cards.get().get(idx).map(|c| c.pm.to_string()).unwrap_or_default()}</span><span class="resource-value-separator">"/"</span>
                                                     <input class="combat-resource-max" type="number" min="0" aria-label="PM máximo" prop:value=move || combat_cards.get().get(idx).map(|c| c.pm_max.to_string()).unwrap_or_default()
-                                                        on:input=move |ev| if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pm_max=v.max(0); }); } />
+                                                        on:input=move |ev| { if let Ok(v)=event_target_value(&ev).parse::<i32>() { combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pm_max=v.max(0); }); } } />
                                                 </div>
                                                 <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pm=c.pm.saturating_add(1); })>"›"</button>
                                                 <button type="button" on:click=move |_| combat_cards.update(|items| if let Some(c)=items.get_mut(idx) { c.pm=c.pm.saturating_add(5); })>"≫"</button>
