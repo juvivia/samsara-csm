@@ -398,7 +398,32 @@ fn SheetApp(
             match cloud::list_all_characters(&current_session).await {
                 Ok(characters) => {
                     let mut cards = Vec::new();
-                    for character in characters {
+                    for mut character in characters {
+                        // Limpeza pontual: remove a condição antiga "cagada" da ficha Aniez.
+                        let mut removed_old_condition = false;
+                        if character.name.eq_ignore_ascii_case("aniez") {
+                            if let Some(conditions) = character.sheet_data.get_mut("conditions").and_then(serde_json::Value::as_array_mut) {
+                                let original_len = conditions.len();
+                                conditions.retain(|condition| {
+                                    !condition.get("name")
+                                        .and_then(serde_json::Value::as_str)
+                                        .map(|name| name.eq_ignore_ascii_case("cagada"))
+                                        .unwrap_or(false)
+                                });
+                                removed_old_condition = conditions.len() != original_len;
+                            }
+                        }
+                        if removed_old_condition {
+                            if let Err(error) = cloud::update_character_as_master(
+                                &current_session,
+                                &character.id,
+                                &character.name,
+                                character.portrait_path.as_deref(),
+                                character.sheet_data.clone(),
+                            ).await {
+                                master_error.set(format!("A ficha Aniez foi carregada, mas não foi possível remover a condição antiga: {}", error));
+                            }
+                        }
                         let portrait = match character.portrait_path.as_deref() {
                             Some(path) => cloud::portrait_signed_url(&current_session, path).await.ok(),
                             None => None,
@@ -412,6 +437,7 @@ fn SheetApp(
                             .filter(|items| !items.is_empty())
                             .unwrap_or_else(default_conditions);
                         for condition in parsed {
+                            if condition.name.eq_ignore_ascii_case("cagada") { continue; }
                             if !library.iter().any(|existing| existing.name.eq_ignore_ascii_case(&condition.name)) {
                                 library.push(condition);
                             }
@@ -483,6 +509,7 @@ fn SheetApp(
                                 .filter(|items| !items.is_empty())
                                 .unwrap_or_else(default_conditions);
                             for condition in parsed {
+                                if condition.name.eq_ignore_ascii_case("cagada") { continue; }
                                 if !library.iter().any(|existing| existing.name.eq_ignore_ascii_case(&condition.name)) {
                                     library.push(condition);
                                 }
