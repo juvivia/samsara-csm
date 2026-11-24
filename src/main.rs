@@ -1981,59 +1981,74 @@ fn SheetApp(
                     <section class="survival-section">
                         <div class="survival-heading">
                             <h2>"Sobrevivência"</h2>
-                            <span>"Controle ambiental"</span>
+                            <span>{move || if viewing_as_master.get() { "Controle ambiental" } else { "Estado atual" }}</span>
                         </div>
-                        <div class="survival-temperature">
-                            <div class="survival-field-heading">
-                                <label>"Temperatura"</label>
-                                <strong>{move || format!("{} °C", sheet.get().temperature)}</strong>
-                            </div>
-                            <input
-                                class="survival-temperature-slider"
-                                type="range"
-                                min="-30"
-                                max="50"
-                                step="1"
-                                aria-label="Temperatura em graus Celsius"
-                                prop:value=move || sheet.get().temperature.to_string()
-                                disabled=move || !viewing_as_master.get()
-                                on:input=move |ev| {
-                                    if let Ok(value) = event_target_value(&ev).parse::<i32>() {
-                                        sheet.update(|s| s.temperature = value.clamp(-30, 50));
+                        <Show
+                            when=move || viewing_as_master.get()
+                            fallback=move || view! {
+                                <div class="survival-player-status">
+                                    <div class="survival-player-value">
+                                        <span>"Temperatura"</span>
+                                        <strong>{move || format!("{} °C", sheet.get().temperature)}</strong>
+                                    </div>
+                                    <div class="survival-player-value">
+                                        <span>"Fome"</span>
+                                        <strong>{move || sheet.get().hunger_state.clone()}</strong>
+                                    </div>
+                                    <div class="survival-player-value">
+                                        <span>"Sede"</span>
+                                        <strong>{move || sheet.get().thirst_state.clone()}</strong>
+                                    </div>
+                                </div>
+                            }
+                        >
+                            <div class="survival-temperature">
+                                <div class="survival-field-heading">
+                                    <label>"Temperatura"</label>
+                                    <strong>{move || format!("{} °C", sheet.get().temperature)}</strong>
+                                </div>
+                                <input
+                                    class="survival-temperature-slider"
+                                    type="range"
+                                    min="-30"
+                                    max="50"
+                                    step="1"
+                                    aria-label="Temperatura em graus Celsius"
+                                    prop:value=move || sheet.get().temperature.to_string()
+                                    on:input=move |ev| {
+                                        if let Ok(value) = event_target_value(&ev).parse::<i32>() {
+                                            sheet.update(|s| s.temperature = value.clamp(-30, 50));
+                                        }
                                     }
-                                }
-                            />
-                            <div class="survival-range-labels"><span>"-30 °C"</span><span>"50 °C"</span></div>
-                        </div>
-                        <div class="survival-needs">
-                            <label>
-                                "Fome"
-                                <select
-                                    prop:value=move || sheet.get().hunger_state.clone()
-                                    disabled=move || !viewing_as_master.get()
-                                    on:change=move |ev| sheet.update(|s| s.hunger_state = event_target_value(&ev))
-                                >
-                                    <option value="Cheio">"Cheio"</option>
-                                    <option value="Normal">"Normal"</option>
-                                    <option value="Fome">"Fome"</option>
-                                    <option value="Desnutrição">"Desnutrição"</option>
-                                </select>
-                            </label>
-                            <label>
-                                "Sede"
-                                <select
-                                    prop:value=move || sheet.get().thirst_state.clone()
-                                    disabled=move || !viewing_as_master.get()
-                                    on:change=move |ev| sheet.update(|s| s.thirst_state = event_target_value(&ev))
-                                >
-                                    <option value="Hidratado">"Hidratado"</option>
-                                    <option value="Normal">"Normal"</option>
-                                    <option value="Sede">"Sede"</option>
-                                    <option value="Desidratado">"Desidratado"</option>
-                                </select>
-                            </label>
-                        </div>
-                        <Show when=move || viewing_as_master.get()>
+                                />
+                                <div class="survival-range-labels"><span>"-30 °C"</span><span>"50 °C"</span></div>
+                            </div>
+                            <div class="survival-needs">
+                                <label>
+                                    "Fome"
+                                    <select
+                                        prop:value=move || sheet.get().hunger_state.clone()
+                                        on:change=move |ev| sheet.update(|s| s.hunger_state = event_target_value(&ev))
+                                    >
+                                        <option value="Cheio">"Cheio"</option>
+                                        <option value="Normal">"Normal"</option>
+                                        <option value="Fome">"Fome"</option>
+                                        <option value="Desnutrição">"Desnutrição"</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    "Sede"
+                                    <select
+                                        prop:value=move || sheet.get().thirst_state.clone()
+                                        on:change=move |ev| sheet.update(|s| s.thirst_state = event_target_value(&ev))
+                                    >
+                                        <option value="Hidratado">"Hidratado"</option>
+                                        <option value="Normal">"Normal"</option>
+                                        <option value="Sede">"Sede"</option>
+                                        <option value="Desidratado">"Desidratado"</option>
+                                    </select>
+                                </label>
+                            </div>
                             <p class="survival-master-hint">"Ajuste os valores e use “Salvar ficha” no rodapé para atualizar a ficha do jogador."</p>
                         </Show>
                     </section>
