@@ -1283,6 +1283,10 @@ fn SheetApp(
                                 let pv = values.get("pv").and_then(|v| v.as_i64()).unwrap_or(0);
                                 let san = values.get("san").and_then(|v| v.as_i64()).unwrap_or(0);
                                 let pm = values.get("pm").and_then(|v| v.as_i64()).unwrap_or(0);
+                                let hunger_value = values.get("hunger_state").and_then(serde_json::Value::as_str).unwrap_or("Normal").to_string();
+                                let thirst_value = values.get("thirst_state").and_then(serde_json::Value::as_str).unwrap_or("Normal").to_string();
+                                let hunger_card_id = card_id.clone();
+                                let thirst_card_id = card_id.clone();
                                 view! {
                                     <article class="master-character-card">
                                         <div class="master-character-portrait">
@@ -1299,8 +1303,8 @@ fn SheetApp(
                                                 <label>
                                                     "Fome"
                                                     <select
-                                                        prop:value=move || character.sheet_data.get("hunger_state").and_then(serde_json::Value::as_str).unwrap_or("Normal").to_string()
-                                                        on:change=move |ev| update_roster_survival(card_id.clone(), "hunger_state", event_target_value(&ev))
+                                                        prop:value=hunger_value
+                                                        on:change=move |ev| update_roster_survival(hunger_card_id.clone(), "hunger_state", event_target_value(&ev))
                                                     >
                                                         <option value="Cheio">"Cheio"</option>
                                                         <option value="Normal">"Normal"</option>
@@ -1311,8 +1315,8 @@ fn SheetApp(
                                                 <label>
                                                     "Sede"
                                                     <select
-                                                        prop:value=move || character.sheet_data.get("thirst_state").and_then(serde_json::Value::as_str).unwrap_or("Normal").to_string()
-                                                        on:change=move |ev| update_roster_survival(card_id.clone(), "thirst_state", event_target_value(&ev))
+                                                        prop:value=thirst_value
+                                                        on:change=move |ev| update_roster_survival(thirst_card_id.clone(), "thirst_state", event_target_value(&ev))
                                                     >
                                                         <option value="Hidratado">"Hidratado"</option>
                                                         <option value="Normal">"Normal"</option>
