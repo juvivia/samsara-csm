@@ -1986,12 +1986,14 @@ fn SheetApp(
                 </Show>
 
                 <Show when=move || tab.get() == 2 && !master_mode.get()>
-                    <div class="notes-panel">
-                        <h2>"Anotações"</h2>
-                        <p class="hint">"Escreva.."</p>
-                        <textarea class="notes" rows="23" placeholder="Escreva aqui..." prop:value=move || sheet.get().notes.clone() on:input=move |ev| sheet.update(|s| s.notes = event_target_value(&ev))></textarea>
+                    <div class="notes-inventory-layout">
+                        <div class="notes-panel">
+                            <h2>"Anotações"</h2>
+                            <p class="hint">"Escreva.."</p>
+                            <textarea class="notes" rows="23" placeholder="Escreva aqui..." prop:value=move || sheet.get().notes.clone() on:input=move |ev| sheet.update(|s| s.notes = event_target_value(&ev))></textarea>
+                        </div>
+                        <inventory::Inventory sheet=sheet />
                     </div>
-                    <inventory::Inventory sheet=sheet />
                 </Show>
             </section>
 
