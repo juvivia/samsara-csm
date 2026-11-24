@@ -1227,3 +1227,64 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     .survival-section { padding: 12px; }
     .survival-needs { gap: 8px; }
 }
+
+
+/* Controles de sobrevivência diretamente na lista de fichas do Mestre */
+.master-global-temperature {
+    display: grid;
+    gap: 7px;
+    padding: 12px 15px;
+    border: 1px solid var(--theme-c-364148);
+    border-radius: 9px;
+    background: var(--theme-c-171d21);
+}
+.master-global-temperature-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.master-global-temperature-heading label {
+    color: var(--theme-c-b4d1c2);
+    font-size: 13px;
+    font-weight: 700;
+}
+.master-global-temperature-heading strong {
+    color: var(--theme-c-e8eeee);
+    font-size: 16px;
+    font-variant-numeric: tabular-nums;
+}
+.master-global-temperature > p {
+    margin: 0;
+    color: var(--theme-c-859098);
+    font-size: 11px;
+}
+.master-character-survival {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 9px;
+}
+.master-character-survival label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--theme-c-859098);
+    font-size: 11px;
+}
+.master-character-survival select {
+    min-width: 105px;
+    max-width: 145px;
+    padding: 5px 7px;
+    border: 1px solid var(--theme-c-364148);
+    border-radius: 6px;
+    background: var(--theme-c-14191d);
+    color: var(--theme-c-e8eeee);
+    font: inherit;
+    font-size: 11px;
+}
+@media (max-width: 600px) {
+    .master-character-survival { gap: 6px; }
+    .master-character-survival label { flex: 1 1 130px; }
+    .master-character-survival select { flex: 1; min-width: 0; }
+}
