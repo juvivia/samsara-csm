@@ -82,6 +82,9 @@ impl Default for Sheet {
 }
 
 fn default_temperature() -> i32 { 20 }
+fn effective_temperature(sheet: &Sheet) -> i32 {
+    sheet.temperature - (sheet.stats[1] * 3) + (sheet.stats[2] * 3)
+}
 fn default_survival_state() -> String { "Normal".into() }
 
 
@@ -2105,7 +2108,8 @@ fn SheetApp(
                                 <div class="survival-player-status">
                                     <div
                                         class=move || {
-                                            let temperature = sheet.get().temperature;
+                                            let current_sheet = sheet.get();
+                                            let temperature = effective_temperature(&current_sheet);
                                             if temperature < 10 {
                                                 "survival-player-value survival-temperature-value survival-cold"
                                             } else if temperature > 35 {
@@ -2122,7 +2126,7 @@ fn SheetApp(
                                             </svg>
                                         </span>
                                         <span class="survival-player-label">"Temperatura"</span>
-                                        <strong>{move || format!("{} °C", sheet.get().temperature)}</strong>
+                                        <strong>{move || { let current_sheet = sheet.get(); format!("{} °C", effective_temperature(&current_sheet)) }}</strong>
                                     </div>
                                     <div class="survival-player-value">
                                         <span class="survival-player-icon" aria-hidden="true">
