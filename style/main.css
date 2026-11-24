@@ -1162,3 +1162,68 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
         order: 2;
     }
 }
+
+
+/* Painel compacto de sobrevivência */
+.survival-section {
+    margin-top: 28px;
+    padding: 13px 14px;
+    border: 1px solid var(--theme-c-30383e);
+    border-radius: 9px;
+    background: rgba(23, 29, 33, .55);
+}
+.survival-heading,
+.survival-field-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.survival-heading h2 {
+    margin: 0;
+    font-size: 16px;
+}
+.survival-heading > span,
+.survival-range-labels,
+.survival-master-hint {
+    color: var(--theme-c-859098);
+    font-size: 11px;
+}
+.survival-temperature { margin-top: 15px; }
+.survival-field-heading label { color: var(--theme-c-a8b1b8); }
+.survival-field-heading strong {
+    color: var(--theme-c-b4d1c2);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+}
+.survival-temperature-slider {
+    display: block;
+    width: 100%;
+    height: 18px;
+    margin: 8px 0 2px;
+    padding: 0;
+    accent-color: var(--theme-c-b4d1c2);
+    cursor: pointer;
+}
+.survival-temperature-slider:disabled { opacity: .8; cursor: default; }
+.survival-range-labels { display: flex; justify-content: space-between; }
+.survival-needs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+}
+.survival-needs select {
+    padding: 8px 10px;
+    font-size: 12px;
+}
+.survival-needs select:disabled {
+    opacity: 1;
+    color: var(--theme-c-e8eeee);
+    cursor: default;
+}
+.survival-master-hint { margin: 10px 0 0; }
+@media (max-width: 420px) {
+    .survival-section { padding: 12px; }
+    .survival-needs { gap: 8px; }
+}
