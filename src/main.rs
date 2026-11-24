@@ -2103,7 +2103,11 @@ fn SheetApp(
                             when=move || viewing_as_master.get()
                             fallback=move || view! {
                                 <div class="survival-player-status">
-                                    <div class="survival-player-value survival-temperature-value">
+                                    <div
+                                        class="survival-player-value survival-temperature-value"
+                                        class:survival-cold=move || sheet.get().temperature < 10
+                                        class:survival-hot=move || sheet.get().temperature > 35
+                                    >
                                         <span class="survival-player-icon" aria-hidden="true">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M14 14.7V5a3 3 0 0 0-6 0v9.7a5 5 0 1 0 6 0Z"/>
