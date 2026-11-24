@@ -1141,3 +1141,24 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
 .turn-condition-remove.inventory-icon-button svg {
     display: block;
 }
+
+
+/* Ordem mobile: inventário antes das anotações.
+   Em telas maiores, display: contents preserva o layout original. */
+.notes-inventory-layout {
+    display: contents;
+}
+@media (max-width: 540px) {
+    .notes-inventory-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+    .notes-inventory-layout > .inventory-section {
+        order: 1;
+        margin-top: 0;
+    }
+    .notes-inventory-layout > .notes-panel {
+        order: 2;
+    }
+}
