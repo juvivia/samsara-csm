@@ -41,6 +41,12 @@ struct Sheet {
     pub(crate) inventory_items: Vec<inventory::InventoryItem>,
     #[serde(default)]
     conditions: Vec<ConditionEntry>,
+    #[serde(default = "default_temperature")]
+    temperature: i32,
+    #[serde(default = "default_survival_state")]
+    hunger_state: String,
+    #[serde(default = "default_survival_state")]
+    thirst_state: String,
 }
 
 impl Default for Sheet {
@@ -68,9 +74,15 @@ impl Default for Sheet {
             inventory_height: 6,
             inventory_items: Vec::new(),
             conditions: default_conditions(),
+            temperature: default_temperature(),
+            hunger_state: default_survival_state(),
+            thirst_state: default_survival_state(),
         }
     }
 }
+
+fn default_temperature() -> i32 { 20 }
+fn default_survival_state() -> String { "Normal".into() }
 
 
 fn handle_portrait_change(
@@ -1965,6 +1977,66 @@ fn SheetApp(
                         </button>
                         <div class="skill-list">{render_skill_list}</div>
                     </div>
+
+                    <section class="survival-section">
+                        <div class="survival-heading">
+                            <h2>"Sobrevivência"</h2>
+                            <span>"Controle ambiental"</span>
+                        </div>
+                        <div class="survival-temperature">
+                            <div class="survival-field-heading">
+                                <label>"Temperatura"</label>
+                                <strong>{move || format!("{} °C", sheet.get().temperature)}</strong>
+                            </div>
+                            <input
+                                class="survival-temperature-slider"
+                                type="range"
+                                min="-30"
+                                max="50"
+                                step="1"
+                                aria-label="Temperatura em graus Celsius"
+                                prop:value=move || sheet.get().temperature.to_string()
+                                disabled=move || !viewing_as_master.get()
+                                on:input=move |ev| {
+                                    if let Ok(value) = event_target_value(&ev).parse::<i32>() {
+                                        sheet.update(|s| s.temperature = value.clamp(-30, 50));
+                                    }
+                                }
+                            />
+                            <div class="survival-range-labels"><span>"-30 °C"</span><span>"50 °C"</span></div>
+                        </div>
+                        <div class="survival-needs">
+                            <label>
+                                "Fome"
+                                <select
+                                    prop:value=move || sheet.get().hunger_state.clone()
+                                    disabled=move || !viewing_as_master.get()
+                                    on:change=move |ev| sheet.update(|s| s.hunger_state = event_target_value(&ev))
+                                >
+                                    <option value="Cheio">"Cheio"</option>
+                                    <option value="Normal">"Normal"</option>
+                                    <option value="Fome">"Fome"</option>
+                                    <option value="Desnutrição">"Desnutrição"</option>
+                                </select>
+                            </label>
+                            <label>
+                                "Sede"
+                                <select
+                                    prop:value=move || sheet.get().thirst_state.clone()
+                                    disabled=move || !viewing_as_master.get()
+                                    on:change=move |ev| sheet.update(|s| s.thirst_state = event_target_value(&ev))
+                                >
+                                    <option value="Hidratado">"Hidratado"</option>
+                                    <option value="Normal">"Normal"</option>
+                                    <option value="Sede">"Sede"</option>
+                                    <option value="Desidratado">"Desidratado"</option>
+                                </select>
+                            </label>
+                        </div>
+                        <Show when=move || viewing_as_master.get()>
+                            <p class="survival-master-hint">"Ajuste os valores e use “Salvar ficha” no rodapé para atualizar a ficha do jogador."</p>
+                        </Show>
+                    </section>
 
                     <section class="conditions-section">
                         <div class="conditions-heading">
