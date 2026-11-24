@@ -370,6 +370,7 @@ fn SheetApp(
     let is_master = session.get_untracked().user.id == cloud::MASTER_UID;
     let viewing_as_master = RwSignal::new(false);
     let master_characters = RwSignal::new(Vec::<(cloud::CloudCharacter, Option<String>)>::new());
+    let master_temperature = RwSignal::new(20i32);
     let master_loading = RwSignal::new(false);
     let master_error = RwSignal::new(String::new());
     let master_delete_pending = RwSignal::new(String::new());
@@ -526,11 +527,68 @@ fn SheetApp(
                     }
                     library.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
                     conditions_library.set(library);
+                    if let Some((first, _)) = cards.first() {
+                        master_temperature.set(first.sheet_data.get("temperature")
+                            .and_then(serde_json::Value::as_i64).unwrap_or(20) as i32);
+                    }
                     master_characters.set(cards);
                 }
                 Err(error) => master_error.set(error),
             }
             master_loading.set(false);
+        });
+    };
+
+    let update_roster_survival = move |id: String, field: &'static str, value: String| {
+        let Some((mut target, _)) = master_characters.get_untracked().into_iter()
+            .find(|(character, _)| character.id == id) else { return; };
+        target.sheet_data[field] = serde_json::Value::String(value);
+        let auth_session = session.get_untracked();
+        let target_id = target.id.clone();
+        let target_name = target.name.clone();
+        let target_portrait = target.portrait_path.clone();
+        let data = target.sheet_data.clone();
+        spawn_local(async move {
+            match cloud::update_character_as_master(
+                &auth_session, &target_id, &target_name, target_portrait.as_deref(), data
+            ).await {
+                Ok(()) => {
+                    master_characters.update(|items| {
+                        if let Some(entry) = items.iter_mut().find(|(item, _)| item.id == target_id) {
+                            entry.0 = target;
+                        }
+                    });
+                    master_error.set(String::new());
+                }
+                Err(error) => master_error.set(format!("Não foi possível salvar o estado de sobrevivência: {}", error)),
+            }
+        });
+    };
+
+    let save_roster_temperature = move |value: i32| {
+        master_temperature.set(value);
+        let targets = master_characters.get_untracked().into_iter().map(|(mut character, portrait)| {
+            if let Some(object) = character.sheet_data.as_object_mut() {
+                object.insert("temperature".into(), serde_json::json!(value));
+            }
+            (character, portrait)
+        }).collect::<Vec<_>>();
+        master_characters.set(targets.clone());
+        let auth_session = session.get_untracked();
+        spawn_local(async move {
+            for (character, _) in targets {
+                if let Err(error) = cloud::update_character_as_master(
+                    &auth_session,
+                    &character.id,
+                    &character.name,
+                    character.portrait_path.as_deref(),
+                    character.sheet_data.clone(),
+                ).await {
+                    master_error.set(format!("Não foi possível atualizar a temperatura de todas as fichas: {}", error));
+                    return;
+                }
+            }
+            master_error.set(String::new());
         });
     };
 
@@ -1182,6 +1240,34 @@ fn SheetApp(
                 <Show when=move || tab.get() == 3 && master_mode.get() && is_master>
                     <section class="master-dashboard">
                         <h2>"Painel do Mestre"</h2>
+                        <section class="master-global-temperature">
+                            <div class="master-global-temperature-heading">
+                                <label for="master-temperature-slider">"Temperatura do ambiente"</label>
+                                <strong>{move || format!("{} °C", master_temperature.get())}</strong>
+                            </div>
+                            <input
+                                id="master-temperature-slider"
+                                class="survival-temperature-slider"
+                                type="range"
+                                min="-30"
+                                max="50"
+                                step="1"
+                                aria-label="Temperatura geral em graus Celsius"
+                                prop:value=move || master_temperature.get().to_string()
+                                on:input=move |ev| {
+                                    if let Ok(value) = event_target_value(&ev).parse::<i32>() {
+                                        master_temperature.set(value.clamp(-30, 50));
+                                    }
+                                }
+                                on:change=move |ev| {
+                                    if let Ok(value) = event_target_value(&ev).parse::<i32>() {
+                                        save_roster_temperature(value.clamp(-30, 50));
+                                    }
+                                }
+                            />
+                            <div class="survival-range-labels"><span>"-30 °C"</span><span>"50 °C"</span></div>
+                            <p>"A temperatura é aplicada a todas as fichas da campanha."</p>
+                        </section>
                         <Show when=move || master_loading.get()><p>"Carregando fichas..."</p></Show>
                         <Show when=move || !master_error.get().is_empty()>
                             <p class="auth-error">{move || master_error.get()}</p>
@@ -1209,6 +1295,32 @@ fn SheetApp(
                                         <div class="master-character-info">
                                             <h3>{character.name.clone()}</h3>
                                             <p>{format!("PV: {} • SAN: {} • PM: {}", pv, san, pm)}</p>
+                                            <div class="master-character-survival">
+                                                <label>
+                                                    "Fome"
+                                                    <select
+                                                        prop:value=move || character.sheet_data.get("hunger_state").and_then(serde_json::Value::as_str).unwrap_or("Normal").to_string()
+                                                        on:change=move |ev| update_roster_survival(card_id.clone(), "hunger_state", event_target_value(&ev))
+                                                    >
+                                                        <option value="Cheio">"Cheio"</option>
+                                                        <option value="Normal">"Normal"</option>
+                                                        <option value="Fome">"Fome"</option>
+                                                        <option value="Desnutrição">"Desnutrição"</option>
+                                                    </select>
+                                                </label>
+                                                <label>
+                                                    "Sede"
+                                                    <select
+                                                        prop:value=move || character.sheet_data.get("thirst_state").and_then(serde_json::Value::as_str).unwrap_or("Normal").to_string()
+                                                        on:change=move |ev| update_roster_survival(card_id.clone(), "thirst_state", event_target_value(&ev))
+                                                    >
+                                                        <option value="Hidratado">"Hidratado"</option>
+                                                        <option value="Normal">"Normal"</option>
+                                                        <option value="Sede">"Sede"</option>
+                                                        <option value="Desidratado">"Desidratado"</option>
+                                                    </select>
+                                                </label>
+                                            </div>
                                         </div>
                                         <div class="master-character-actions">
                                             <button type="button" on:click=move |_| {
