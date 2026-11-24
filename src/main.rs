@@ -2103,16 +2103,35 @@ fn SheetApp(
                             when=move || viewing_as_master.get()
                             fallback=move || view! {
                                 <div class="survival-player-status">
-                                    <div class="survival-player-value">
-                                        <span>"Temperatura"</span>
+                                    <div class="survival-player-value survival-temperature-value">
+                                        <span class="survival-player-icon" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M14 14.7V5a3 3 0 0 0-6 0v9.7a5 5 0 1 0 6 0Z"/>
+                                                <path d="M11 11v7"/>
+                                            </svg>
+                                        </span>
+                                        <span class="survival-player-label">"Temperatura"</span>
                                         <strong>{move || format!("{} °C", sheet.get().temperature)}</strong>
                                     </div>
                                     <div class="survival-player-value">
-                                        <span>"Fome"</span>
+                                        <span class="survival-player-icon" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M7 3v7M10 3v7M13 3v7M10 10v11"/>
+                                                <path d="M7 10h6"/>
+                                                <path d="M17 3v18"/>
+                                                <path d="M17 3c2 2 3 4 3 7h-3"/>
+                                            </svg>
+                                        </span>
+                                        <span class="survival-player-label">"Fome"</span>
                                         <strong>{move || sheet.get().hunger_state.clone()}</strong>
                                     </div>
                                     <div class="survival-player-value">
-                                        <span>"Sede"</span>
+                                        <span class="survival-player-icon" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M12 3.2c-2.8 4-6 7.2-6 11a6 6 0 0 0 12 0c0-3.8-3.2-7-6-11Z"/>
+                                            </svg>
+                                        </span>
+                                        <span class="survival-player-label">"Sede"</span>
                                         <strong>{move || sheet.get().thirst_state.clone()}</strong>
                                     </div>
                                 </div>
