@@ -2212,7 +2212,16 @@ fn SheetApp(
                         <div class="conditions-list" aria-label="Glossário de condições">
                             {move || {
                                 let current_sheet = sheet.get();
-                                let items = if current_sheet.conditions.is_empty() { default_conditions() } else { current_sheet.conditions.clone() };
+                                // Mantém no painel do jogador a mesma base de condições do Mestre.
+                                // As condições padrão sempre aparecem; as personalizadas da ficha são
+                                // acrescentadas sem duplicar nomes, preservando suas descrições.
+                                let mut items = default_conditions();
+                                for condition in current_sheet.conditions.iter().cloned() {
+                                    if !items.iter().any(|existing| existing.name.eq_ignore_ascii_case(&condition.name)) {
+                                        items.push(condition);
+                                    }
+                                }
+                                items.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
 
                                 items.into_iter().map(|condition| view! {
                                     <details class="condition-entry">
