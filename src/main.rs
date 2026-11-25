@@ -1289,13 +1289,13 @@ fn SheetApp(
                                 let hunger_value = values.get("hunger_state").and_then(serde_json::Value::as_str).unwrap_or("Normal").to_string();
                                 let thirst_value = values.get("thirst_state").and_then(serde_json::Value::as_str).unwrap_or("Normal").to_string();
                                 let fatigue_sede = match thirst_value.as_str() {
-                                    "Sede" => Some("Fadiga (sede): Sede = −1 VEL."),
-                                    "Desidratado" => Some("Fadiga (sede): Desidratado = −2 VEL."),
+                                    "Sede" => Some("Quando estiver com \"sede\" terá -1 de VEL, e se chegar a \"Desidratado\" aumenta para -2 de VEL."),
+                                    "Desidratado" => Some("Quando estiver com \"sede\" terá -1 de VEL, e se chegar a \"Desidratado\" aumenta para -2 de VEL."),
                                     _ => None,
                                 };
                                 let fatigue_fome = match hunger_value.as_str() {
-                                    "Fome" => Some("Fadiga (fome): Fome = −1 FIS."),
-                                    "Desnutrição" => Some("Fadiga (fome): Desnutrição = −2 FIS."),
+                                    "Fome" => Some("Quando estiver com \"fome\" terá -1 de FIS e se chegar a \"Desnutrição\" aumenta para -2 de FIS."),
+                                    "Desnutrição" => Some("Quando estiver com \"fome\" terá -1 de FIS e se chegar a \"Desnutrição\" aumenta para -2 de FIS."),
                                     _ => None,
                                 };
                                 let hunger_card_id = card_id.clone();
@@ -2235,11 +2235,11 @@ fn SheetApp(
                                 match current_sheet.thirst_state.as_str() {
                                     "Sede" => items.push(ConditionEntry {
                                         name: "Fadiga (sede)".into(),
-                                        description: "Sede: −1 VEL; Desidratado: −2 VEL.".into(),
+                                        description: "Quando estiver com \"sede\" terá -1 de VEL, e se chegar a \"Desidratado\" aumenta para -2 de VEL.".into(),
                                     }),
                                     "Desidratado" => items.push(ConditionEntry {
                                         name: "Fadiga (sede)".into(),
-                                        description: "Sede: −1 VEL; Desidratado: −2 VEL.".into(),
+                                        description: "Quando estiver com \"sede\" terá -1 de VEL, e se chegar a \"Desidratado\" aumenta para -2 de VEL.".into(),
                                     }),
                                     _ => {}
                                 }
@@ -2247,11 +2247,11 @@ fn SheetApp(
                                 match current_sheet.hunger_state.as_str() {
                                     "Fome" => items.push(ConditionEntry {
                                         name: "Fadiga (fome)".into(),
-                                        description: "Fome: −1 FIS; Desnutrição: −2 FIS.".into(),
+                                        description: "Quando estiver com \"fome\" terá -1 de FIS e se chegar a \"Desnutrição\" aumenta para -2 de FIS.".into(),
                                     }),
                                     "Desnutrição" => items.push(ConditionEntry {
                                         name: "Fadiga (fome)".into(),
-                                        description: "Fome: −1 FIS; Desnutrição: −2 FIS.".into(),
+                                        description: "Quando estiver com \"fome\" terá -1 de FIS e se chegar a \"Desnutrição\" aumenta para -2 de FIS.".into(),
                                     }),
                                     _ => {}
                                 }
