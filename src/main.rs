@@ -226,6 +226,8 @@ fn default_conditions() -> Vec<ConditionEntry> {
         ConditionEntry { name: "Silenciado".into(), description: "Seu personagem não poderá realizar nenhuma ação que envolva custo de PM.".into() },
         ConditionEntry { name: "Atordoado".into(), description: "Seu personagem poderá realizar apenas ações de movimento, com metade da distância comum.".into() },
         ConditionEntry { name: "Esfolado".into(), description: "Toda vez que realizar um ataque, seu personagem deverá fazer um teste de Resistir, com DT definida pelo mestre. Se passar, realiza o ataque normalmente. Se falhar, fica desmaiado por 1d4 rodadas.".into() },
+        ConditionEntry { name: "Fadiga (sede)".into(), description: "Quando estiver com \"sede\" terá -1 de VEL, e se chegar a \"Desidratado\" aumenta para -2 de VEL.".into() },
+        ConditionEntry { name: "Fadiga (fome)".into(), description: "Quando estiver com \"fome\" terá -1 de FIS e se chegar a \"Desnutrição\" aumenta para -2 de FIS.".into() },
     ]
 }
 
@@ -515,7 +517,7 @@ fn SheetApp(
                         };
                         cards.push((character, portrait));
                     }
-                    let mut library = Vec::<ConditionEntry>::new();
+                    let mut library = default_conditions();
                     for (character, _) in &cards {
                         let parsed = character.sheet_data.get("conditions")
                             .and_then(|value| serde_json::from_value::<Vec<ConditionEntry>>(value.clone()).ok())
@@ -644,7 +646,7 @@ fn SheetApp(
                 let library_signal = poll_conditions.clone();
                 spawn_local(async move {
                     if let Ok(characters) = cloud::list_all_characters(&current_session).await {
-                        let mut library = Vec::<ConditionEntry>::new();
+                        let mut library = default_conditions();
                         for character in characters {
                             let parsed = character.sheet_data.get("conditions")
                                 .and_then(|value| serde_json::from_value::<Vec<ConditionEntry>>(value.clone()).ok())
@@ -1288,16 +1290,6 @@ fn SheetApp(
                                 let pm = values.get("pm").and_then(|v| v.as_i64()).unwrap_or(0);
                                 let hunger_value = values.get("hunger_state").and_then(serde_json::Value::as_str).unwrap_or("Normal").to_string();
                                 let thirst_value = values.get("thirst_state").and_then(serde_json::Value::as_str).unwrap_or("Normal").to_string();
-                                let fatigue_sede = match thirst_value.as_str() {
-                                    "Sede" => Some("Quando estiver com \"sede\" terá -1 de VEL, e se chegar a \"Desidratado\" aumenta para -2 de VEL."),
-                                    "Desidratado" => Some("Quando estiver com \"sede\" terá -1 de VEL, e se chegar a \"Desidratado\" aumenta para -2 de VEL."),
-                                    _ => None,
-                                };
-                                let fatigue_fome = match hunger_value.as_str() {
-                                    "Fome" => Some("Quando estiver com \"fome\" terá -1 de FIS e se chegar a \"Desnutrição\" aumenta para -2 de FIS."),
-                                    "Desnutrição" => Some("Quando estiver com \"fome\" terá -1 de FIS e se chegar a \"Desnutrição\" aumenta para -2 de FIS."),
-                                    _ => None,
-                                };
                                 let hunger_card_id = card_id.clone();
                                 let thirst_card_id = card_id.clone();
                                 view! {
@@ -1338,16 +1330,6 @@ fn SheetApp(
                                                     </select>
                                                 </label>
                                             </div>
-                                            {if fatigue_sede.is_some() || fatigue_fome.is_some() {
-                                                view! {
-                                                    <div class="master-character-fatigue">
-                                                        {fatigue_sede.map(|text| view! { <p>{text}</p> })}
-                                                        {fatigue_fome.map(|text| view! { <p>{text}</p> })}
-                                                    </div>
-                                                }.into_any()
-                                            } else {
-                                                ().into_any()
-                                            }}
                                         </div>
                                         <div class="master-character-actions">
                                             <button type="button" on:click=move |_| {
@@ -2230,31 +2212,7 @@ fn SheetApp(
                         <div class="conditions-list" aria-label="Glossário de condições">
                             {move || {
                                 let current_sheet = sheet.get();
-                                let mut items = if current_sheet.conditions.is_empty() { default_conditions() } else { current_sheet.conditions.clone() };
-
-                                match current_sheet.thirst_state.as_str() {
-                                    "Sede" => items.push(ConditionEntry {
-                                        name: "Fadiga (sede)".into(),
-                                        description: "Quando estiver com \"sede\" terá -1 de VEL, e se chegar a \"Desidratado\" aumenta para -2 de VEL.".into(),
-                                    }),
-                                    "Desidratado" => items.push(ConditionEntry {
-                                        name: "Fadiga (sede)".into(),
-                                        description: "Quando estiver com \"sede\" terá -1 de VEL, e se chegar a \"Desidratado\" aumenta para -2 de VEL.".into(),
-                                    }),
-                                    _ => {}
-                                }
-
-                                match current_sheet.hunger_state.as_str() {
-                                    "Fome" => items.push(ConditionEntry {
-                                        name: "Fadiga (fome)".into(),
-                                        description: "Quando estiver com \"fome\" terá -1 de FIS e se chegar a \"Desnutrição\" aumenta para -2 de FIS.".into(),
-                                    }),
-                                    "Desnutrição" => items.push(ConditionEntry {
-                                        name: "Fadiga (fome)".into(),
-                                        description: "Quando estiver com \"fome\" terá -1 de FIS e se chegar a \"Desnutrição\" aumenta para -2 de FIS.".into(),
-                                    }),
-                                    _ => {}
-                                }
+                                let items = if current_sheet.conditions.is_empty() { default_conditions() } else { current_sheet.conditions.clone() };
 
                                 items.into_iter().map(|condition| view! {
                                     <details class="condition-entry">
