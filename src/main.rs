@@ -2013,97 +2013,7 @@ fn SheetApp(
                         <div class="stat"><strong>"HAB"</strong><input aria-label="Atributo HAB" type="number" disabled=move || !resource_editing.get() prop:value=move || sheet.get().stats[4].to_string() on:input=move |ev| { if let Ok(v) = event_target_value(&ev).parse::<i32>() { sheet.update(|s| s.stats[4] = v); } } /></div>
                     </div>
 
-                    <section class="test-advantages-section">
-                        <h2>"Vantagens"</h2>
-                        <p class="hint">"Defina quantas vantagens o personagem possui em cada tipo de teste. uma vantagem equivale a +1d4 no teste."</p>
-                        <div class="test-advantages-grid">
-                            {move || {
-                                const TESTS: [(&str, &str); 16] = [
-                                    ("Desviar", "VEL + HAB"),
-                                    ("Sobrevivência", "FIS + INT / HAB"),
-                                    ("Social", "DOM"),
-                                    ("Combate", "FIS + HAB / VEL"),
-                                    ("Escapar", "VEL + FIS"),
-                                    ("Pontaria", "HAB"),
-                                    ("Inventar", "HAB + INT"),
-                                    ("Medicina", "DOM + INT"),
-                                    ("Investigação", "INT"),
-                                    ("Elusão", "HAB"),
-                                    ("Capacidade", "FIS"),
-                                    ("Acrobacia", "VEL + HAB"),
-                                    ("Iniciativa", "VEL"),
-                                    ("Percepção", "HAB + DOM"),
-                                    ("Resistir", "FIS + DOM"),
-                                    ("Dharma", "DOM"),
-                                ];
-                                TESTS.into_iter().enumerate().map(|(index, (name, formula))| {
-                                    let test_name = name.to_string();
-                                    view! {
-                                        <label class="test-advantage-card">
-                                            <span class="test-advantage-name">{test_name}</span>
-                                            <span class="test-advantage-formula">{formula}</span>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                step="1"
-                                                aria-label=format!("Vantagens em {}", name)
-                                                disabled=move || !resource_editing.get()
-                                                prop:value=move || sheet.get().test_advantages.get(index).copied().unwrap_or(0).to_string()
-                                                on:input=move |ev| {
-                                                    if let Ok(value) = event_target_value(&ev).parse::<i32>() {
-                                                        sheet.update(|s| {
-                                                            if s.test_advantages.len() < 16 {
-                                                                s.test_advantages.resize(16, 0);
-                                                            }
-                                                            s.test_advantages[index] = value.max(0);
-                                                        });
-                                                    }
-                                                }
-                                            />
-                                        </label>
-                                    }
-                                }).collect_view()
-                            }}
-                        </div>
-                    </section>
-
-
-
-                </Show>
-
-                <Show when=move || tab.get() == 1 && !master_mode.get()>
-                    <h2>"Habilidades"</h2>
-                    <div class="skill-field">
-                        <div class="skill-form">
-                            <Show when=move || skill_form_open.get()>
-                                <input
-                                    class="skill-input"
-                                    placeholder="Nome da habilidade"
-                                    prop:value=move || skill_name.get()
-                                    on:input=move |ev| skill_name.set(event_target_value(&ev))
-                                />
-                                <div class="skill-description-row">
-                                    <textarea
-                                        class="skill-input skill-description-input"
-                                        rows="3"
-                                        placeholder="Descrição"
-                                        prop:value=move || skill_description.get()
-                                        on:input=move |ev| skill_description.set(event_target_value(&ev))
-                                    ></textarea>
-                                </div>
-                            </Show>
-                        </div>
-                        <button type="button" class="skill-add" on:click=submit_skill>
-                            {move || if skill_form_open.get() { "Salvar" } else { "Adicionar" }}
-                        </button>
-                        <div class="skill-list">{render_skill_list}</div>
-                    </div>
-
                     <section class="survival-section">
-                        <div class="survival-heading">
-                            <h2>"Sobrevivência"</h2>
-                            <span>{move || if viewing_as_master.get() { "Controle ambiental" } else { "Estado atual" }}</span>
-                        </div>
                         <Show
                             when=move || viewing_as_master.get()
                             fallback=move || view! {
@@ -2204,6 +2114,94 @@ fn SheetApp(
                             <p class="survival-master-hint">"Ajuste os valores e use “Salvar ficha” no rodapé para atualizar a ficha do jogador."</p>
                         </Show>
                     </section>
+
+                    <section class="test-advantages-section">
+                        <h2>"Vantagens"</h2>
+                        <p class="hint">"Defina quantas vantagens o personagem possui em cada tipo de teste. uma vantagem equivale a +1d4 no teste."</p>
+                        <div class="test-advantages-grid">
+                            {move || {
+                                const TESTS: [(&str, &str); 16] = [
+                                    ("Desviar", "VEL + HAB"),
+                                    ("Sobrevivência", "FIS + INT / HAB"),
+                                    ("Social", "DOM"),
+                                    ("Combate", "FIS + HAB / VEL"),
+                                    ("Escapar", "VEL + FIS"),
+                                    ("Pontaria", "HAB"),
+                                    ("Inventar", "HAB + INT"),
+                                    ("Medicina", "DOM + INT"),
+                                    ("Investigação", "INT"),
+                                    ("Elusão", "HAB"),
+                                    ("Capacidade", "FIS"),
+                                    ("Acrobacia", "VEL + HAB"),
+                                    ("Iniciativa", "VEL"),
+                                    ("Percepção", "HAB + DOM"),
+                                    ("Resistir", "FIS + DOM"),
+                                    ("Dharma", "DOM"),
+                                ];
+                                TESTS.into_iter().enumerate().map(|(index, (name, formula))| {
+                                    let test_name = name.to_string();
+                                    view! {
+                                        <label class="test-advantage-card">
+                                            <span class="test-advantage-name">{test_name}</span>
+                                            <span class="test-advantage-formula">{formula}</span>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="1"
+                                                aria-label=format!("Vantagens em {}", name)
+                                                disabled=move || !resource_editing.get()
+                                                prop:value=move || sheet.get().test_advantages.get(index).copied().unwrap_or(0).to_string()
+                                                on:input=move |ev| {
+                                                    if let Ok(value) = event_target_value(&ev).parse::<i32>() {
+                                                        sheet.update(|s| {
+                                                            if s.test_advantages.len() < 16 {
+                                                                s.test_advantages.resize(16, 0);
+                                                            }
+                                                            s.test_advantages[index] = value.max(0);
+                                                        });
+                                                    }
+                                                }
+                                            />
+                                        </label>
+                                    }
+                                }).collect_view()
+                            }}
+                        </div>
+                    </section>
+
+
+
+                </Show>
+
+                <Show when=move || tab.get() == 1 && !master_mode.get()>
+                    <h2>"Habilidades"</h2>
+                    <div class="skill-field">
+                        <div class="skill-form">
+                            <Show when=move || skill_form_open.get()>
+                                <input
+                                    class="skill-input"
+                                    placeholder="Nome da habilidade"
+                                    prop:value=move || skill_name.get()
+                                    on:input=move |ev| skill_name.set(event_target_value(&ev))
+                                />
+                                <div class="skill-description-row">
+                                    <textarea
+                                        class="skill-input skill-description-input"
+                                        rows="3"
+                                        placeholder="Descrição"
+                                        prop:value=move || skill_description.get()
+                                        on:input=move |ev| skill_description.set(event_target_value(&ev))
+                                    ></textarea>
+                                </div>
+                            </Show>
+                        </div>
+                        <button type="button" class="skill-add" on:click=submit_skill>
+                            {move || if skill_form_open.get() { "Salvar" } else { "Adicionar" }}
+                        </button>
+                        <div class="skill-list">{render_skill_list}</div>
+                    </div>
+
+
 
                     <section class="conditions-section">
                         <div class="conditions-heading">
