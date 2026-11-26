@@ -1448,6 +1448,7 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
 .portrait-crop-preview {
     width: min(100%, 280px);
     aspect-ratio: 7 / 10;
+    max-height: min(52vh, 520px);
     align-self: center;
     overflow: hidden;
     position: relative;
@@ -1456,6 +1457,7 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     background: #080b0d;
     cursor: grab;
     touch-action: none;
+    transition: aspect-ratio .15s ease;
 }
 .portrait-crop-preview:active { cursor: grabbing; }
 .portrait-crop-preview img {
@@ -1469,14 +1471,29 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     pointer-events: none;
     will-change: transform;
 }
-.portrait-zoom-control {
+.portrait-aspect-control {
     display: flex;
     flex-direction: column;
     gap: 7px;
     color: var(--theme-c-b4d1c2);
     font-size: 12px;
 }
-.portrait-zoom-control input { width: 100%; accent-color: var(--theme-c-6f9582); }
+.portrait-aspect-control select {
+    width: 100%;
+    min-height: 36px;
+    padding: 7px 10px;
+    border: 1px solid var(--theme-c-364148);
+    border-radius: 7px;
+    background: var(--theme-c-111719);
+    color: var(--theme-c-e2e8e5);
+    font: inherit;
+}
+.portrait-crop-hint {
+    margin: 0;
+    color: var(--theme-c-8fa99c);
+    font-size: 11px;
+    line-height: 1.45;
+}
 .portrait-crop-actions {
     display: flex;
     justify-content: flex-end;
