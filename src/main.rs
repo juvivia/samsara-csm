@@ -2034,7 +2034,7 @@ fn SheetApp(
                                             crop_x.set(0.0);
                                             crop_y.set(0.0);
                                         }
-                                    >"中央izar enquadramento"</button>
+                                    >"Centralizar enquadramento"</button>
                                     <div class="portrait-crop-actions">
                                         <button class="secondary-button" type="button"
                                             disabled=move || portrait_uploading.get()
