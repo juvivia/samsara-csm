@@ -175,8 +175,10 @@ fn confirm_portrait_crop(
             let scale = (out_w / iw).max(out_h / ih) * zoom;
             let draw_w = iw * scale;
             let draw_h = ih * scale;
-            let x = (out_w - draw_w) * (0.5 + offset_x / 200.0);
-            let y = (out_h - draw_h) * (0.5 + offset_y / 200.0);
+            // Deslocamento positivo move a imagem para a direita/baixo,
+            // igual ao movimento percebido na prévia.
+            let x = (out_w - draw_w) * 0.5 + (offset_x / 100.0) * out_w;
+            let y = (out_h - draw_h) * 0.5 + (offset_y / 100.0) * out_h;
             ctx.draw_image_with_html_image_element_and_dw_and_dh(
                 &image_for_load, x, y, draw_w, draw_h
             ).map_err(|_| "Não foi possível recortar a imagem.".to_string())?;
@@ -1984,15 +1986,16 @@ fn SheetApp(
                                         class="portrait-crop-preview"
                                         on:pointermove=move |ev: web_sys::PointerEvent| {
                                             if ev.buttons() == 1 {
-                                                crop_x.update(|v| *v = (*v + ev.movement_x() as f64 * 0.8).clamp(-100.0, 100.0));
-                                                crop_y.update(|v| *v = (*v + ev.movement_y() as f64 * 0.8).clamp(-100.0, 100.0));
+                                                // O deslocamento acompanha a direção do ponteiro.
+                                                crop_x.update(|v| *v = (*v + ev.movement_x() as f64 / 2.8).clamp(-50.0, 50.0));
+                                                crop_y.update(|v| *v = (*v + ev.movement_y() as f64 / 4.0).clamp(-50.0, 50.0));
                                             }
                                         }
                                     >
                                         {move || crop_source.get().map(|src| view! {
                                             <img src=src alt="Prévia do recorte" draggable="false"
                                                 style=move || format!(
-                                                    "object-position: calc(50% + {}%) calc(50% + {}%); transform: scale({});",
+                                                    "transform: translate({}%, {}%) scale({});",
                                                     crop_x.get(), crop_y.get(), crop_zoom.get()
                                                 )
                                             />
@@ -2007,6 +2010,31 @@ fn SheetApp(
                                             }
                                         />
                                     </label>
+                                    <label class="portrait-zoom-control">
+                                        "Enquadramento horizontal"
+                                        <input type="range" min="-50" max="50" step="1"
+                                            prop:value=move || crop_x.get().to_string()
+                                            on:input=move |ev| {
+                                                if let Ok(v) = event_target_value(&ev).parse::<f64>() { crop_x.set(v); }
+                                            }
+                                        />
+                                    </label>
+                                    <label class="portrait-zoom-control">
+                                        "Enquadramento vertical"
+                                        <input type="range" min="-50" max="50" step="1"
+                                            prop:value=move || crop_y.get().to_string()
+                                            on:input=move |ev| {
+                                                if let Ok(v) = event_target_value(&ev).parse::<f64>() { crop_y.set(v); }
+                                            }
+                                        />
+                                    </label>
+                                    <button class="secondary-button portrait-reset-button" type="button"
+                                        on:click=move |_| {
+                                            crop_zoom.set(1.0);
+                                            crop_x.set(0.0);
+                                            crop_y.set(0.0);
+                                        }
+                                    >"中央izar enquadramento"</button>
                                     <div class="portrait-crop-actions">
                                         <button class="secondary-button" type="button"
                                             disabled=move || portrait_uploading.get()
