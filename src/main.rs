@@ -127,6 +127,7 @@ fn confirm_portrait_crop(
     zoom: f64,
     offset_x: f64,
     offset_y: f64,
+    aspect_ratio: f64,
     session: auth::AuthSession,
     character_id: String,
     sheet: RwSignal<Sheet>,
@@ -156,9 +157,9 @@ fn confirm_portrait_crop(
                 .dyn_into::<web_sys::HtmlCanvasElement>()
                 .map_err(|_| "Canvas indisponível.".to_string())?;
 
-            // Retrato vertical 7:10 em alta resolução.
+            // Recorte em alta resolução, respeitando o aspecto escolhido.
             let out_w = 700.0;
-            let out_h = 1000.0;
+            let out_h = out_w / aspect_ratio.clamp(0.4, 2.5);
             canvas.set_width(out_w as u32);
             canvas.set_height(out_h as u32);
             let ctx = canvas.get_context("2d")
@@ -459,6 +460,7 @@ fn SheetApp(
     let crop_zoom = RwSignal::new(1.0f64);
     let crop_x = RwSignal::new(0.0f64);
     let crop_y = RwSignal::new(0.0f64);
+    let crop_aspect = RwSignal::new(0.7f64);
     let selected_theme = RwSignal::new(load_color_theme(&character_id.get()));
     let theme_picker_open = RwSignal::new(false);
     let is_master = session.get_untracked().user.id == cloud::MASTER_UID;
@@ -1981,15 +1983,42 @@ fn SheetApp(
                             <div class="portrait-crop-backdrop">
                                 <section class="portrait-crop-dialog" role="dialog" aria-modal="true" aria-label="Ajustar retrato">
                                     <h2>"Ajustar retrato"</h2>
-                                    <p>"Arraste a imagem para escolher o enquadramento e ajuste o zoom."</p>
+                                    <p>"Arraste a imagem para ajustar a posição. Use a roda do mouse para aproximar ou afastar."</p>
+                                    <label class="portrait-aspect-control">
+                                        "Formato do recorte"
+                                        <select
+                                            prop:value=move || crop_aspect.get().to_string()
+                                            on:change=move |ev| {
+                                                if let Ok(v) = event_target_value(&ev).parse::<f64>() {
+                                                    crop_aspect.set(v);
+                                                    crop_x.set(0.0);
+                                                    crop_y.set(0.0);
+                                                }
+                                            }
+                                        >
+                                            <option value="0.6666667">"2:3 — Retrato"</option>
+                                            <option value="0.7">"7:10 — Retrato padrão"</option>
+                                            <option value="0.75">"3:4 — Retrato"</option>
+                                            <option value="0.8">"4:5 — Retrato"</option>
+                                            <option value="1.0">"1:1 — Quadrado"</option>
+                                            <option value="1.25">"5:4 — Paisagem"</option>
+                                            <option value="1.3333333">"4:3 — Paisagem"</option>
+                                            <option value="1.7777778">"16:9 — Paisagem"</option>
+                                        </select>
+                                    </label>
                                     <div
                                         class="portrait-crop-preview"
+                                        style=move || format!("aspect-ratio: {};", crop_aspect.get())
                                         on:pointermove=move |ev: web_sys::PointerEvent| {
                                             if ev.buttons() == 1 {
-                                                // O deslocamento acompanha a direção do ponteiro.
                                                 crop_x.update(|v| *v = (*v + ev.movement_x() as f64 / 2.8).clamp(-50.0, 50.0));
                                                 crop_y.update(|v| *v = (*v + ev.movement_y() as f64 / 4.0).clamp(-50.0, 50.0));
                                             }
+                                        }
+                                        on:wheel=move |ev: web_sys::WheelEvent| {
+                                            ev.prevent_default();
+                                            let step = if ev.delta_y() < 0.0 { 0.08 } else { -0.08 };
+                                            crop_zoom.update(|v| *v = (*v + step).clamp(1.0, 4.0));
                                         }
                                     >
                                         {move || crop_source.get().map(|src| view! {
@@ -2001,40 +2030,14 @@ fn SheetApp(
                                             />
                                         })}
                                     </div>
-                                    <label class="portrait-zoom-control">
-                                        "Zoom"
-                                        <input type="range" min="1" max="3" step="0.05"
-                                            prop:value=move || crop_zoom.get().to_string()
-                                            on:input=move |ev| {
-                                                if let Ok(v) = event_target_value(&ev).parse::<f64>() { crop_zoom.set(v); }
-                                            }
-                                        />
-                                    </label>
-                                    <label class="portrait-zoom-control">
-                                        "Enquadramento horizontal"
-                                        <input type="range" min="-50" max="50" step="1"
-                                            prop:value=move || crop_x.get().to_string()
-                                            on:input=move |ev| {
-                                                if let Ok(v) = event_target_value(&ev).parse::<f64>() { crop_x.set(v); }
-                                            }
-                                        />
-                                    </label>
-                                    <label class="portrait-zoom-control">
-                                        "Enquadramento vertical"
-                                        <input type="range" min="-50" max="50" step="1"
-                                            prop:value=move || crop_y.get().to_string()
-                                            on:input=move |ev| {
-                                                if let Ok(v) = event_target_value(&ev).parse::<f64>() { crop_y.set(v); }
-                                            }
-                                        />
-                                    </label>
+                                    <p class="portrait-crop-hint">"Dica: role o scroll sobre a imagem para controlar o zoom. Arraste para reposicionar."</p>
                                     <button class="secondary-button portrait-reset-button" type="button"
                                         on:click=move |_| {
                                             crop_zoom.set(1.0);
                                             crop_x.set(0.0);
                                             crop_y.set(0.0);
                                         }
-                                    >"Centralizar enquadramento"</button>
+                                    >"Centralizar e redefinir zoom"</button>
                                     <div class="portrait-crop-actions">
                                         <button class="secondary-button" type="button"
                                             disabled=move || portrait_uploading.get()
@@ -2050,7 +2053,7 @@ fn SheetApp(
                                                 if let Some(url) = crop_source.get() {
                                                     confirm_portrait_crop(
                                                         url, crop_zoom.get(), crop_x.get(), crop_y.get(),
-                                                        session.get(), character_id.get(), sheet.clone(),
+                                                        crop_aspect.get(), session.get(), character_id.get(), sheet.clone(),
                                                         save_status.clone(), portrait_url.clone(),
                                                         portrait_uploading.clone(), crop_source.clone()
                                                     );
