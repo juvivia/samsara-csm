@@ -1467,6 +1467,7 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     transform-origin: center;
     user-select: none;
     pointer-events: none;
+    will-change: transform;
 }
 .portrait-zoom-control {
     display: flex;
@@ -1499,4 +1500,17 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
 .portrait-crop-actions button:disabled { opacity: .55; cursor: wait; }
 @media (max-width: 480px) {
     .portrait-crop-dialog { padding: 15px; }
+}
+
+.portrait-reset-button {
+    align-self: flex-start;
+    min-height: 30px;
+    padding: 5px 9px;
+    border: 1px solid var(--theme-c-364148);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--theme-c-b4d1c2);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
 }
