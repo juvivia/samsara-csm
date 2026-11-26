@@ -1985,7 +1985,7 @@ fn SheetApp(
                                         on:pointermove=move |ev: web_sys::PointerEvent| {
                                             if ev.buttons() == 1 {
                                                 crop_x.update(|v| *v = (*v + ev.movement_x() as f64 * 0.8).clamp(-100.0, 100.0));
-                                                crop_y.update(|v| *v + ev.movement_y() as f64 * 0.8).clamp(-100.0, 100.0);
+                                                crop_y.update(|v| *v = (*v + ev.movement_y() as f64 * 0.8).clamp(-100.0, 100.0));
                                             }
                                         }
                                     >
