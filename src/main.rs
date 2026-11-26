@@ -90,61 +90,144 @@ fn default_survival_state() -> String { "Normal".into() }
 
 fn handle_portrait_change(
     ev: web_sys::Event,
-    session: auth::AuthSession,
-    character_id: String,
-    sheet: RwSignal<Sheet>,
+    crop_source: RwSignal<Option<String>>,
+    crop_zoom: RwSignal<f64>,
+    crop_x: RwSignal<f64>,
+    crop_y: RwSignal<f64>,
     save_status: RwSignal<String>,
-    portrait_url: RwSignal<Option<String>>,
-    portrait_uploading: RwSignal<bool>,
 ) {
     let input = ev.target().and_then(|target| target.dyn_into::<web_sys::HtmlInputElement>().ok());
     let file = input.and_then(|input| input.files().and_then(|files| files.get(0)));
     let Some(file) = file else { return; };
 
     let mime = file.type_();
-    let extension = match mime.as_str() {
-        "image/jpeg" => String::from("jpg"),
-        "image/png" => String::from("png"),
-        "image/webp" => String::from("webp"),
-        _ => {
-            save_status.set("Formato inválido. Use JPG, PNG ou WEBP.".to_string());
-            return;
-        }
-    };
-
+    if !["image/jpeg", "image/png", "image/webp"].contains(&mime.as_str()) {
+        save_status.set("Formato inválido. Use JPG, PNG ou WEBP.".to_string());
+        return;
+    }
     if file.size() > 5.0 * 1024.0 * 1024.0 {
         save_status.set("A imagem deve ter no máximo 5 MB.".to_string());
         return;
     }
 
-    portrait_uploading.set(true);
-    save_status.set("Enviando imagem...".to_string());
+    match web_sys::Url::create_object_url_with_blob(&file) {
+        Ok(url) => {
+            crop_source.set(Some(url));
+            crop_zoom.set(1.0);
+            crop_x.set(0.0);
+            crop_y.set(0.0);
+            save_status.set("Ajuste o enquadramento e confirme o recorte.".to_string());
+        }
+        Err(_) => save_status.set("Não foi possível abrir a imagem selecionada.".to_string()),
+    }
+}
 
-    spawn_local(async move {
-        let result = async {
-            let buffer = JsFuture::from(file.array_buffer()).await
-                .map_err(|_| "Não foi possível ler a imagem.".to_string())?;
-            let bytes = Uint8Array::new(&buffer).to_vec();
-            cloud::upload_portrait(
-                &session,
-                &character_id,
-                &bytes,
-                &mime,
-                &extension,
-            ).await
-        }.await;
+fn confirm_portrait_crop(
+    source_url: String,
+    zoom: f64,
+    offset_x: f64,
+    offset_y: f64,
+    session: auth::AuthSession,
+    character_id: String,
+    sheet: RwSignal<Sheet>,
+    save_status: RwSignal<String>,
+    portrait_url: RwSignal<Option<String>>,
+    portrait_uploading: RwSignal<bool>,
+    crop_source: RwSignal<Option<String>>,
+) {
+    let image = match web_sys::HtmlImageElement::new() {
+        Ok(image) => image,
+        Err(_) => {
+            save_status.set("Não foi possível preparar o recorte.".to_string());
+            return;
+        }
+    };
+
+    let image_for_load = image.clone();
+    let source_for_load = source_url.clone();
+    let onload = Closure::<dyn FnMut()>::new(move || {
+        let result = (|| -> Result<Vec<u8>, String> {
+            let canvas = web_sys::window()
+                .ok_or("Navegador indisponível.".to_string())?
+                .document()
+                .ok_or("Documento indisponível.".to_string())?
+                .create_element("canvas")
+                .map_err(|_| "Não foi possível criar a imagem recortada.".to_string())?
+                .dyn_into::<web_sys::HtmlCanvasElement>()
+                .map_err(|_| "Canvas indisponível.".to_string())?;
+
+            // Retrato vertical 7:10 em alta resolução.
+            let out_w = 700.0;
+            let out_h = 1000.0;
+            canvas.set_width(out_w as u32);
+            canvas.set_height(out_h as u32);
+            let ctx = canvas.get_context("2d")
+                .map_err(|_| "Não foi possível preparar o recorte.".to_string())?
+                .ok_or("Canvas 2D indisponível.".to_string())?
+                .dyn_into::<web_sys::CanvasRenderingContext2d>()
+                .map_err(|_| "Canvas 2D indisponível.".to_string())?;
+
+            let iw = image_for_load.natural_width() as f64;
+            let ih = image_for_load.natural_height() as f64;
+            if iw <= 0.0 || ih <= 0.0 {
+                return Err("A imagem selecionada é inválida.".to_string());
+            }
+            let scale = (out_w / iw).max(out_h / ih) * zoom;
+            let draw_w = iw * scale;
+            let draw_h = ih * scale;
+            let x = (out_w - draw_w) * (0.5 + offset_x / 200.0);
+            let y = (out_h - draw_h) * (0.5 + offset_y / 200.0);
+            ctx.draw_image_with_html_image_element_and_dw_and_dh(
+                &image_for_load, x, y, draw_w, draw_h
+            ).map_err(|_| "Não foi possível recortar a imagem.".to_string())?;
+
+            let data_url = canvas.to_data_url_with_type("image/png")
+                .map_err(|_| "Não foi possível gerar a imagem recortada.".to_string())?;
+            let encoded = data_url.split_once(',')
+                .map(|(_, data)| data)
+                .ok_or("Formato de imagem recortada inválido.".to_string())?;
+            let binary = web_sys::window()
+                .ok_or("Navegador indisponível.".to_string())?
+                .atob(encoded)
+                .map_err(|_| "Não foi possível converter o recorte.".to_string())?;
+            Ok(binary.bytes().collect())
+        })();
 
         match result {
-            Ok((path, url)) => {
-                sheet.update(|s| s.portrait_path = Some(path));
-                portrait_url.set(Some(url));
-                save_status.set("Imagem enviada. Clique em Salvar ficha para confirmar.".to_string());
+            Ok(bytes) => {
+                let session = session.clone();
+                let character_id = character_id.clone();
+                let sheet = sheet.clone();
+                let save_status = save_status.clone();
+                let portrait_url = portrait_url.clone();
+                let portrait_uploading = portrait_uploading.clone();
+                let crop_source = crop_source.clone();
+                spawn_local(async move {
+                    match cloud::upload_portrait(
+                        &session, &character_id, &bytes, "image/png", "png"
+                    ).await {
+                        Ok((path, url)) => {
+                            sheet.update(|s| s.portrait_path = Some(path));
+                            portrait_url.set(Some(url));
+                            save_status.set("Retrato recortado e enviado. Clique em Salvar ficha para confirmar.".to_string());
+                            crop_source.set(None);
+                        }
+                        Err(error) => save_status.set(format!("Erro ao enviar imagem: {}", error)),
+                    }
+                    portrait_uploading.set(false);
+                });
             }
-            Err(error) => save_status.set(format!("Erro ao enviar imagem: {}", error)),
+            Err(error) => {
+                save_status.set(error);
+                portrait_uploading.set(false);
+            }
         }
-
-        portrait_uploading.set(false);
     });
+    image.set_onload(Some(onload.as_ref().unchecked_ref()));
+    onload.forget();
+    portrait_uploading.set(true);
+    save_status.set("Preparando recorte...".to_string());
+    image.set_src(&source_for_load);
 }
 
 async fn prepare_account(
@@ -370,6 +453,10 @@ fn SheetApp(
     let editing_skills = RwSignal::new(Vec::<String>::new());
     let portrait_url = RwSignal::new(None::<String>);
     let portrait_uploading = RwSignal::new(false);
+    let crop_source = RwSignal::new(None::<String>);
+    let crop_zoom = RwSignal::new(1.0f64);
+    let crop_x = RwSignal::new(0.0f64);
+    let crop_y = RwSignal::new(0.0f64);
     let selected_theme = RwSignal::new(load_color_theme(&character_id.get()));
     let theme_picker_open = RwSignal::new(false);
     let is_master = session.get_untracked().user.id == cloud::MASTER_UID;
@@ -1878,17 +1965,74 @@ fn SheetApp(
                                     on:change=move |ev| {
                                         handle_portrait_change(
                                             ev,
-                                            session.get(),
-                                            character_id.get(),
-                                            sheet.clone(),
+                                            crop_source.clone(),
+                                            crop_zoom.clone(),
+                                            crop_x.clone(),
+                                            crop_y.clone(),
                                             save_status.clone(),
-                                            portrait_url.clone(),
-                                            portrait_uploading.clone(),
                                         );
                                     }
                                 />
                             </label>
                         </div>
+                        <Show when=move || crop_source.get().is_some()>
+                            <div class="portrait-crop-backdrop">
+                                <section class="portrait-crop-dialog" role="dialog" aria-modal="true" aria-label="Ajustar retrato">
+                                    <h2>"Ajustar retrato"</h2>
+                                    <p>"Arraste a imagem para escolher o enquadramento e ajuste o zoom."</p>
+                                    <div
+                                        class="portrait-crop-preview"
+                                        on:pointermove=move |ev: web_sys::PointerEvent| {
+                                            if ev.buttons() == 1 {
+                                                crop_x.update(|v| *v = (*v + ev.movement_x() as f64 * 0.8).clamp(-100.0, 100.0));
+                                                crop_y.update(|v| *v + ev.movement_y() as f64 * 0.8).clamp(-100.0, 100.0);
+                                            }
+                                        }
+                                    >
+                                        {move || crop_source.get().map(|src| view! {
+                                            <img src=src alt="Prévia do recorte" draggable="false"
+                                                style=move || format!(
+                                                    "object-position: calc(50% + {}%) calc(50% + {}%); transform: scale({});",
+                                                    crop_x.get(), crop_y.get(), crop_zoom.get()
+                                                )
+                                            />
+                                        })}
+                                    </div>
+                                    <label class="portrait-zoom-control">
+                                        "Zoom"
+                                        <input type="range" min="1" max="3" step="0.05"
+                                            prop:value=move || crop_zoom.get().to_string()
+                                            on:input=move |ev| {
+                                                if let Ok(v) = event_target_value(&ev).parse::<f64>() { crop_zoom.set(v); }
+                                            }
+                                        />
+                                    </label>
+                                    <div class="portrait-crop-actions">
+                                        <button class="secondary-button" type="button"
+                                            disabled=move || portrait_uploading.get()
+                                            on:click=move |_| {
+                                                if let Some(url) = crop_source.get() {
+                                                    let _ = web_sys::Url::revoke_object_url(&url);
+                                                }
+                                                crop_source.set(None);
+                                            }
+                                        >"Cancelar"</button>
+                                        <button type="button" disabled=move || portrait_uploading.get()
+                                            on:click=move |_| {
+                                                if let Some(url) = crop_source.get() {
+                                                    confirm_portrait_crop(
+                                                        url, crop_zoom.get(), crop_x.get(), crop_y.get(),
+                                                        session.get(), character_id.get(), sheet.clone(),
+                                                        save_status.clone(), portrait_url.clone(),
+                                                        portrait_uploading.clone(), crop_source.clone()
+                                                    );
+                                                }
+                                            }
+                                        >{move || if portrait_uploading.get() { "Processando..." } else { "Confirmar recorte" }}</button>
+                                    </div>
+                                </section>
+                            </div>
+                        </Show>
                         <div class="form-grid character-profile-fields">
                             <label>
                                 "Nome"
