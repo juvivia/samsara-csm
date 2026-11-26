@@ -210,6 +210,7 @@ fn confirm_portrait_crop(
                     ).await {
                         Ok((path, url)) => {
                             sheet.update(|s| s.portrait_path = Some(path));
+                            portrait_load_retry.set(false);
                             portrait_url.set(Some(url));
                             save_status.set("Retrato recortado e enviado. Clique em Salvar ficha para confirmar.".to_string());
                             crop_source.set(None);
@@ -454,6 +455,7 @@ fn SheetApp(
     let expanded_skill_folders = RwSignal::new(Vec::<String>::new());
     let editing_skills = RwSignal::new(Vec::<String>::new());
     let portrait_url = RwSignal::new(None::<String>);
+    let portrait_load_retry = RwSignal::new(false);
     let portrait_uploading = RwSignal::new(false);
     let crop_source = RwSignal::new(None::<String>);
     let crop_zoom = RwSignal::new(1.0f64);
@@ -1950,7 +1952,28 @@ fn SheetApp(
                                 <Show when=move || portrait_url.get().is_some() fallback=|| view! {
                                     <div class="portrait-placeholder"><span>"Sem imagem"</span></div>
                                 }>
-                                    <img class="character-portrait" src=move || portrait_url.get().unwrap_or_default() alt="Retrato do personagem" />
+                                    <img class="character-portrait"
+                                        src=move || portrait_url.get().unwrap_or_default()
+                                        alt="Retrato do personagem"
+                                        on:error=move |_| {
+                                            if !portrait_load_retry.get_untracked() {
+                                                portrait_load_retry.set(true);
+                                                if let Some(path) = sheet.get_untracked().portrait_path {
+                                                    let current_session = session.get_untracked();
+                                                    spawn_local(async move {
+                                                        match cloud::portrait_signed_url(&current_session, &path).await {
+                                                            Ok(url) => portrait_url.set(Some(url)),
+                                                            Err(error) => save_status.set(format!("Não foi possível carregar o retrato do Supabase: {}", error)),
+                                                        }
+                                                    });
+                                                } else {
+                                                    save_status.set("O endereço do retrato não está salvo na ficha. Tente selecionar a imagem novamente.".to_string());
+                                                }
+                                            } else {
+                                                save_status.set("O retrato foi encontrado, mas o navegador não conseguiu carregar a imagem. Verifique o bucket 'portraits' e as permissões de leitura no Supabase.".to_string());
+                                            }
+                                        }
+                                    />
                                 </Show>
                                 <span class="portrait-upload-icon" aria-hidden="true">
                                     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
