@@ -461,6 +461,7 @@ fn SheetApp(
     let crop_x = RwSignal::new(0.0f64);
     let crop_y = RwSignal::new(0.0f64);
     let crop_aspect = RwSignal::new(0.7f64);
+    let crop_resize_handle = RwSignal::new(None::<String>);
     let selected_theme = RwSignal::new(load_color_theme(&character_id.get()));
     let theme_picker_open = RwSignal::new(false);
     let is_master = session.get_untracked().user.id == cloud::MASTER_UID;
@@ -1984,37 +1985,27 @@ fn SheetApp(
                                 <section class="portrait-crop-dialog" role="dialog" aria-modal="true" aria-label="Ajustar retrato">
                                     <h2>"Ajustar retrato"</h2>
                                     <p>"Arraste a imagem para ajustar a posição. Use a roda do mouse para aproximar ou afastar."</p>
-                                    <label class="portrait-aspect-control">
-                                        "Formato do recorte"
-                                        <select
-                                            prop:value=move || crop_aspect.get().to_string()
-                                            on:change=move |ev| {
-                                                if let Ok(v) = event_target_value(&ev).parse::<f64>() {
-                                                    crop_aspect.set(v);
-                                                    crop_x.set(0.0);
-                                                    crop_y.set(0.0);
-                                                }
-                                            }
-                                        >
-                                            <option value="0.6666667">"2:3 — Retrato"</option>
-                                            <option value="0.7">"7:10 — Retrato padrão"</option>
-                                            <option value="0.75">"3:4 — Retrato"</option>
-                                            <option value="0.8">"4:5 — Retrato"</option>
-                                            <option value="1.0">"1:1 — Quadrado"</option>
-                                            <option value="1.25">"5:4 — Paisagem"</option>
-                                            <option value="1.3333333">"4:3 — Paisagem"</option>
-                                            <option value="1.7777778">"16:9 — Paisagem"</option>
-                                        </select>
-                                    </label>
+                                    <p class="portrait-crop-hint">"Arraste os quadradinhos da moldura para ajustar livremente o formato do recorte."</p>
                                     <div
                                         class="portrait-crop-preview"
-                                        style=move || format!("aspect-ratio: {};", crop_aspect.get())
+                                        style=move || format!("width: min(100%, 280px, calc(52vh * {})); aspect-ratio: {};", crop_aspect.get(), crop_aspect.get())
                                         on:pointermove=move |ev: web_sys::PointerEvent| {
-                                            if ev.buttons() == 1 {
+                                            if let Some(handle) = crop_resize_handle.get() {
+                                                let dx = ev.movement_x() as f64;
+                                                let dy = ev.movement_y() as f64;
+                                                let sx = if handle.contains('w') { -1.0 } else if handle.contains('e') { 1.0 } else { 0.0 };
+                                                let sy = if handle.contains('n') { -1.0 } else if handle.contains('s') { 1.0 } else { 0.0 };
+                                                crop_aspect.update(|ratio| {
+                                                    let change = (dx * sx - dy * sy) / 220.0;
+                                                    *ratio = (*ratio * change.exp()).clamp(0.4, 2.5);
+                                                });
+                                            } else if ev.buttons() == 1 {
                                                 crop_x.update(|v| *v = (*v + ev.movement_x() as f64 / 2.8).clamp(-50.0, 50.0));
                                                 crop_y.update(|v| *v = (*v + ev.movement_y() as f64 / 4.0).clamp(-50.0, 50.0));
                                             }
                                         }
+                                        on:pointerup=move |_| crop_resize_handle.set(None)
+                                        on:pointercancel=move |_| crop_resize_handle.set(None)
                                         on:wheel=move |ev: web_sys::WheelEvent| {
                                             ev.prevent_default();
                                             let step = if ev.delta_y() < 0.0 { 0.08 } else { -0.08 };
@@ -2029,15 +2020,35 @@ fn SheetApp(
                                                 )
                                             />
                                         })}
+                                        <div class="portrait-crop-grid" aria-hidden="true">
+                                            <span class="crop-grid-line crop-grid-v1"></span>
+                                            <span class="crop-grid-line crop-grid-v2"></span>
+                                            <span class="crop-grid-line crop-grid-h1"></span>
+                                            <span class="crop-grid-line crop-grid-h2"></span>
+                                        </div>
+                                        <button class="crop-handle crop-handle-nw" aria-label="Redimensionar canto superior esquerdo" on:pointerdown=move |ev: web_sys::PointerEvent| { ev.prevent_default(); crop_resize_handle.set(Some("nw".into())); }></button>
+                                        <button class="crop-handle crop-handle-n" aria-label="Redimensionar borda superior" on:pointerdown=move |ev: web_sys::PointerEvent| { ev.prevent_default(); crop_resize_handle.set(Some("n".into())); }></button>
+                                        <button class="crop-handle crop-handle-ne" aria-label="Redimensionar canto superior direito" on:pointerdown=move |ev: web_sys::PointerEvent| { ev.prevent_default(); crop_resize_handle.set(Some("ne".into())); }></button>
+                                        <button class="crop-handle crop-handle-w" aria-label="Redimensionar borda esquerda" on:pointerdown=move |ev: web_sys::PointerEvent| { ev.prevent_default(); crop_resize_handle.set(Some("w".into())); }></button>
+                                        <button class="crop-handle crop-handle-e" aria-label="Redimensionar borda direita" on:pointerdown=move |ev: web_sys::PointerEvent| { ev.prevent_default(); crop_resize_handle.set(Some("e".into())); }></button>
+                                        <button class="crop-handle crop-handle-sw" aria-label="Redimensionar canto inferior esquerdo" on:pointerdown=move |ev: web_sys::PointerEvent| { ev.prevent_default(); crop_resize_handle.set(Some("sw".into())); }></button>
+                                        <button class="crop-handle crop-handle-s" aria-label="Redimensionar borda inferior" on:pointerdown=move |ev: web_sys::PointerEvent| { ev.prevent_default(); crop_resize_handle.set(Some("s".into())); }></button>
+                                        <button class="crop-handle crop-handle-se" aria-label="Redimensionar canto inferior direito" on:pointerdown=move |ev: web_sys::PointerEvent| { ev.prevent_default(); crop_resize_handle.set(Some("se".into())); }></button>
                                     </div>
-                                    <p class="portrait-crop-hint">"Dica: role o scroll sobre a imagem para controlar o zoom. Arraste para reposicionar."</p>
-                                    <button class="secondary-button portrait-reset-button" type="button"
+                                    <p class="portrait-crop-hint">"Use os pontos da moldura para redimensionar. Arraste a imagem para reposicionar e role para controlar o zoom."</p>
+                                    <button class="secondary-button portrait-reset-button" type="button" title="Centralizar e redefinir zoom" aria-label="Centralizar e redefinir zoom"
                                         on:click=move |_| {
                                             crop_zoom.set(1.0);
                                             crop_x.set(0.0);
                                             crop_y.set(0.0);
+                                            crop_aspect.set(0.7);
                                         }
-                                    >"Centralizar e redefinir zoom"</button>
+                                    >
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                            <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
+                                        </svg>
+                                    </button>
                                     <div class="portrait-crop-actions">
                                         <button class="secondary-button" type="button"
                                             disabled=move || portrait_uploading.get()
