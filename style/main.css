@@ -108,9 +108,41 @@ footer { border-top: 1px solid var(--theme-c-30383e); padding-top: 20px; }
     margin-bottom: 12px;
 }
 
+.condition-search {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 9px;
+    padding: 8px 11px;
+    border: 1px solid var(--theme-c-30383e);
+    border-radius: 7px;
+    outline: none;
+    background: rgba(0, 0, 0, .14);
+    color: var(--theme-c-e8eeee);
+    font: inherit;
+    font-size: 12px;
+    transition: border-color 160ms ease, background 160ms ease;
+}
+.condition-search::placeholder { color: var(--theme-c-859098); }
+.condition-search:focus {
+    border-color: var(--theme-c-536b60);
+    background: var(--theme-c-171d21);
+}
 .conditions-list {
     display: grid;
-    gap: 8px;
+    gap: 7px;
+    height: 250px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--theme-c-536b60) transparent;
+}
+.condition-search-empty {
+    margin: 0;
+    padding: 12px 2px;
+    color: var(--theme-c-859098);
+    font-size: 12px;
 }
 
 .condition-entry {
