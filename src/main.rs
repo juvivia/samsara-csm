@@ -133,6 +133,7 @@ fn confirm_portrait_crop(
     save_status: RwSignal<String>,
     portrait_url: RwSignal<Option<String>>,
     portrait_uploading: RwSignal<bool>,
+    portrait_load_retry: RwSignal<bool>,
     crop_source: RwSignal<Option<String>>,
 ) {
     let image = match web_sys::HtmlImageElement::new() {
@@ -2058,7 +2059,8 @@ fn SheetApp(
                                                         url, crop_zoom.get(), crop_x.get(), crop_y.get(),
                                                         session.get(), character_id.get(), sheet.clone(),
                                                         save_status.clone(), portrait_url.clone(),
-                                                        portrait_uploading.clone(), crop_source.clone()
+                                                        portrait_uploading.clone(), portrait_load_retry.clone(),
+                                                        crop_source.clone()
                                                     );
                                                 }
                                             }
