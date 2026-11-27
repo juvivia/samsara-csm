@@ -193,7 +193,12 @@ fn confirm_portrait_crop(
                 .ok_or("Navegador indisponível.".to_string())?
                 .atob(encoded)
                 .map_err(|_| "Não foi possível converter o recorte.".to_string())?;
-            Ok(binary.bytes().collect())
+
+            // atob() retorna uma binary string: cada caractere representa
+            // exatamente um byte (0..=255). String::bytes() produziria os
+            // bytes UTF-8 desses caracteres e corromperia valores >= 128.
+            // Converter cada caractere diretamente para u8 preserva o PNG.
+            Ok(binary.chars().map(|character| character as u8).collect())
         })();
 
         match result {
