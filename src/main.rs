@@ -459,6 +459,7 @@ fn SheetApp(
     let resource_editing = RwSignal::new(false);
     let skill_name = RwSignal::new(String::new());
     let skill_description = RwSignal::new(String::new());
+    let condition_search = RwSignal::new(String::new());
     let skill_form_open = RwSignal::new(false);
     let expanded_skill_folders = RwSignal::new(Vec::<String>::new());
     let editing_skills = RwSignal::new(Vec::<String>::new());
@@ -2396,9 +2397,18 @@ fn SheetApp(
                         <div class="conditions-heading">
                             <h2>"Condições"</h2>
                         </div>
+                        <input
+                            class="condition-search"
+                            type="search"
+                            placeholder="Pesquisar condição..."
+                            aria-label="Pesquisar condições"
+                            prop:value=move || condition_search.get()
+                            on:input=move |ev| condition_search.set(event_target_value(&ev))
+                        />
                         <div class="conditions-list" aria-label="Glossário de condições">
                             {move || {
                                 let current_sheet = sheet.get();
+                                let search = condition_search.get().trim().to_lowercase();
                                 // Mantém no painel do jogador a mesma base de condições do Mestre.
                                 // As condições padrão sempre aparecem; as personalizadas da ficha são
                                 // acrescentadas sem duplicar nomes, preservando suas descrições.
@@ -2409,13 +2419,20 @@ fn SheetApp(
                                     }
                                 }
                                 items.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+                                items.retain(|condition| search.is_empty()
+                                    || condition.name.to_lowercase().contains(&search)
+                                    || condition.description.to_lowercase().contains(&search));
 
-                                items.into_iter().map(|condition| view! {
-                                    <details class="condition-entry">
-                                        <summary>{condition.name}</summary>
-                                        <p>{condition.description}</p>
-                                    </details>
-                                }).collect_view()
+                                if items.is_empty() {
+                                    view! { <p class="condition-search-empty">"Nenhuma condição encontrada."</p> }.into_any()
+                                } else {
+                                    items.into_iter().map(|condition| view! {
+                                        <details class="condition-entry">
+                                            <summary>{condition.name}</summary>
+                                            <p>{condition.description}</p>
+                                        </details>
+                                    }).collect_view().into_any()
+                                }
                             }}
                         </div>
                     </section>
