@@ -320,6 +320,8 @@ fn default_conditions() -> Vec<ConditionEntry> {
         ConditionEntry { name: "Esfolado".into(), description: "Toda vez que realizar um ataque, seu personagem deverá fazer um teste de Resistir, com DT definida pelo mestre. Se passar, realiza o ataque normalmente. Se falhar, fica desmaiado por 1d4 rodadas.".into() },
         ConditionEntry { name: "Fadiga (sede)".into(), description: "Quando estiver com \"sede\" terá -1 de VEL, e se chegar a \"Desidratado\" aumenta para -2 de VEL.".into() },
         ConditionEntry { name: "Fadiga (fome)".into(), description: "Quando estiver com \"fome\" terá -1 de FIS e se chegar a \"Desnutrição\" aumenta para -2 de FIS.".into() },
+        ConditionEntry { name: "Hipotermia".into(), description: "A 10 °C: tem desvantagem em qualquer teste de FIS e HAB. A 0 °C: se não conseguir se esquentar em 1d4 rodadas (ou em 3 ações fora de combate), sofre 3d6 de dano por rodada; alternativamente, o dano pode ser aplicado a cada 2 horas.".into() },
+        ConditionEntry { name: "Hipertermia".into(), description: "A 35 °C: tem desvantagem em qualquer teste de INT e DOM. A 40 °C: em combate, seu movimento é reduzido à metade; fora de combate, não consegue andar mais de 20 metros por hora.".into() },
     ]
 }
 
@@ -2425,7 +2427,7 @@ fn SheetApp(
                         <div class="notes-panel">
                             <h2>"Anotações"</h2>
                             <p class="hint">"Escreva.."</p>
-                            <textarea class="notes" rows="23" placeholder="Escreva aqui..." prop:value=move || sheet.get().notes.clone() on:input=move |ev| sheet.update(|s| s.notes = event_target_value(&ev))></textarea>
+                            <textarea class="notes" rows="24" placeholder="Escreva aqui..." prop:value=move || sheet.get().notes.clone() on:input=move |ev| sheet.update(|s| s.notes = event_target_value(&ev))></textarea>
                         </div>
                         <inventory::Inventory sheet=sheet />
                     </div>
